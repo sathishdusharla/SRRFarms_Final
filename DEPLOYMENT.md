@@ -1,6 +1,37 @@
-# Deployment Instructions for SRR Farms E-commerce Platform
+# Deployment Guide - SRR Farms E-commerce Platform
 
-## 🚀 Deployment Options
+## 🚀 Production Deployment
+
+### Prerequisites
+- Node.js v16+ installed
+- MongoDB instance (local or cloud)
+- Domain name (optional)
+- SSL certificate (for HTTPS)
+
+## 📋 Pre-Deployment Checklist
+
+### Environment Configuration
+- [ ] Set up production MongoDB database
+- [ ] Configure environment variables
+- [ ] Set up SSL certificates
+- [ ] Configure domain DNS
+- [ ] Set up monitoring tools
+
+### Security Checklist
+- [ ] Change default JWT secret
+- [ ] Enable CORS for specific origins only
+- [ ] Set up rate limiting
+- [ ] Configure secure headers
+- [ ] Enable HTTPS redirect
+
+### Performance Checklist
+- [ ] Enable gzip compression
+- [ ] Set up CDN for static assets
+- [ ] Configure database indexes
+- [ ] Enable caching headers
+- [ ] Optimize images and assets
+
+## � Deployment Methods
 
 ### Option 1: Vercel (Frontend) + Railway/Render (Backend) - **RECOMMENDED**
 
@@ -9,15 +40,293 @@
 2. Connect Vercel to your GitHub account
 3. Import your repository
 4. Configure environment variables in Vercel dashboard:
-   - `VITE_API_URL=https://your-backend-url.com/api`
-   - Add all Firebase config variables
-5. Deploy automatically
+   ```
+   VITE_API_URL=https://your-backend-url.com/api
+   ```
+5. Build settings:
+   ```
+   Build Command: npm run build
+   Output Directory: dist
+   Install Command: npm install
+   ```
+6. Deploy automatically
 
 #### Backend Deployment (Railway):
 1. Create account on Railway.app
 2. Connect GitHub repository
 3. Select the `server` folder as root
-4. Add environment variables from `.env.production`
+4. Add environment variables:
+   ```
+   MONGODB_URI=mongodb://your-production-db-url
+   JWT_SECRET=super-secure-random-string-minimum-32-characters
+   NODE_ENV=production
+   PORT=3001
+   ```
+5. Deploy automatically on push
+
+### Option 2: Traditional VPS/Server
+
+#### Backend Deployment
+1. **Upload files to server**
+   ```bash
+   scp -r server/ user@your-server:/path/to/app/
+   ```
+
+2. **Install dependencies**
+   ```bash
+   cd /path/to/app/server
+   npm install --production
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   # Create .env file
+   MONGODB_URI=mongodb://localhost:27017/srrfarms_prod
+   JWT_SECRET=your-super-secure-secret-key
+   NODE_ENV=production
+   PORT=3001
+   ```
+
+4. **Set up PM2 for process management**
+   ```bash
+   npm install -g pm2
+   pm2 start server.js --name "srrfarms-backend"
+   pm2 startup
+   pm2 save
+   ```
+
+#### Frontend Deployment
+1. **Build the application**
+   ```bash
+   npm run build
+   ```
+
+2. **Upload build files**
+   ```bash
+   scp -r dist/ user@your-server:/var/www/srrfarms/
+   ```
+
+3. **Configure Nginx**
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com;
+       
+       # Redirect to HTTPS
+       return 301 https://$server_name$request_uri;
+   }
+   
+   server {
+       listen 443 ssl;
+       server_name your-domain.com;
+       
+       ssl_certificate /path/to/certificate.crt;
+       ssl_certificate_key /path/to/private.key;
+       
+       root /var/www/srrfarms;
+       index index.html;
+       
+       # Frontend routes
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
+       
+       # API proxy
+       location /api/ {
+           proxy_pass http://localhost:3001;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+### Option 3: Docker Deployment
+
+#### Create Dockerfile for Backend
+```dockerfile
+# server/Dockerfile
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY . .
+
+EXPOSE 3001
+
+CMD ["npm", "start"]
+```
+
+#### Create Dockerfile for Frontend
+```dockerfile
+# Dockerfile
+FROM node:16-alpine as build
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+#### Docker Compose
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: srrfarms-db
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: srrfarms
+    ports:
+      - "27017:27017"
+
+  backend:
+    build: ./server
+    container_name: srrfarms-backend
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/srrfarms
+      JWT_SECRET: your-super-secure-secret
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+
+  frontend:
+    build: .
+    container_name: srrfarms-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
+```
+
+## 🔒 Security Configuration
+
+### Environment Variables (Production)
+```bash
+# Backend .env
+MONGODB_URI=mongodb://your-production-db-url
+JWT_SECRET=super-secure-random-string-minimum-32-characters
+NODE_ENV=production
+PORT=3001
+CORS_ORIGIN=https://your-frontend-domain.com
+```
+
+### Frontend Environment
+```bash
+# .env.production
+VITE_API_URL=https://your-backend-domain.com/api
+```
+
+## 📊 Monitoring and Maintenance
+
+### Health Checks
+Set up monitoring for:
+- [ ] Application uptime
+- [ ] API response times
+- [ ] Database connection
+- [ ] Memory usage
+- [ ] Disk space
+
+### Backup Strategy
+- [ ] Daily database backups
+- [ ] Code repository backups
+- [ ] User uploaded files backup
+- [ ] Configuration files backup
+
+### Maintenance Tasks
+- [ ] Regular security updates
+- [ ] Database optimization
+- [ ] Log rotation
+- [ ] Certificate renewal
+- [ ] Performance monitoring
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Backend Not Starting
+```bash
+# Check logs
+pm2 logs srrfarms-backend
+
+# Common fixes
+1. Check MongoDB connection
+2. Verify environment variables
+3. Check port conflicts
+4. Review file permissions
+```
+
+#### Frontend Not Loading
+```bash
+# Check build output
+npm run build
+
+# Common fixes
+1. Verify API URL configuration
+2. Check Nginx configuration
+3. Verify SSL certificates
+4. Check CORS settings
+```
+
+#### Database Connection Issues
+```bash
+# Check MongoDB status
+systemctl status mongod
+
+# Test connection
+mongo --eval "db.adminCommand('ismaster')"
+```
+
+## 📈 Performance Optimization
+
+### Backend Optimization
+- Enable gzip compression
+- Set up database indexes
+- Implement API caching
+- Use connection pooling
+
+### Frontend Optimization
+- Enable asset caching
+- Implement code splitting
+- Optimize images
+- Use CDN for static assets
+
+### Database Optimization
+```javascript
+// Add indexes for better performance
+db.users.createIndex({ email: 1 })
+db.orders.createIndex({ userId: 1, createdAt: -1 })
+db.products.createIndex({ name: "text", description: "text" })
+```
+
+---
+
+**📞 Support**: For deployment assistance, contact the development team.
+
+**⚠️ Important**: Always test deployments in a staging environment first!
 5. Deploy automatically
 
 ### Option 2: DigitalOcean/AWS/Google Cloud
