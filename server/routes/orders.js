@@ -449,4 +449,48 @@ router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => 
   }
 });
 
+// PUT /api/orders/:id/status - Update order status (Admin only)
+router.put('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const orderId = req.params.id;
+
+    // Validate status
+    const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    // Update order status
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { status: status },
+      { new: true }
+    ).populate('user', 'name email').populate('items.product');
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Order status updated successfully',
+      order: order
+    });
+
+  } catch (error) {
+    console.error('Update order status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating order status'
+    });
+  }
+});
+
 module.exports = router;

@@ -49,6 +49,11 @@ interface AdminUser {
 interface AdminOrder {
   _id: string;
   orderNumber: string;
+  user?: {
+    _id: string;
+    fullName: string;
+    email: string;
+  };
   customer: {
     name: string;
     email: string;
@@ -59,19 +64,23 @@ interface AdminOrder {
   };
   items: Array<{
     product: {
+      _id: string;
       name: string;
       price: number;
     };
     quantity: number;
+    price: number;
     total: number;
   }>;
+  subtotal: number;
+  shipping: number;
+  tax: number;
   total: number;
   status: string;
   paymentMethod: string;
   paymentStatus: string;
-  isGuestOrder: boolean;
   createdAt: string;
-  notes?: string;
+  isGuestOrder?: boolean;
 }
 
 interface AdminDashboardProps {
@@ -149,6 +158,42 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     }
   };
 
+  // Fetch orders
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const { data } = await apiCall(`/orders/admin/all?status=${orderFilter}&search=${orderSearch}&limit=20`);
+      if (data.success) {
+        setOrders(data.orders || []);
+      }
+    } catch (error) {
+      setError('Failed to fetch orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update order status
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const { data } = await apiCall(`/orders/${orderId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (data.success) {
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order._id === orderId ? { ...order, status: newStatus } : order
+          )
+        );
+        setSuccessMessage('Order status updated successfully');
+      }
+    } catch (error) {
+      setError('Failed to update order status');
+    }
+  };
+
   // Handle password reset action
   const handlePasswordReset = async (resetId: string, action: 'approve' | 'reject') => {
     setLoading(true);
@@ -182,8 +227,10 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
       fetchPasswordResets();
     } else if (activeTab === 'users') {
       fetchUsers();
+    } else if (activeTab === 'orders') {
+      fetchOrders();
     }
-  }, [activeTab, resetFilter, userSearch, userPage]);
+  }, [activeTab, resetFilter, userSearch, userPage, orderFilter, orderSearch]);
 
   // Early returns after all hooks
   if (!isOpen || !user?.isAdmin) return null;
@@ -403,6 +450,138 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Orders Tab */}
+            {activeTab === 'orders' && (
+              <div className="space-y-6">
+                {/* Orders Filters */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <select
+                    value={orderFilter}
+                    onChange={(e) => setOrderFilter(e.target.value)}
+                    className="px-3 py-2 border rounded-lg"
+                  >
+                    <option value="all">All Orders</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search orders..."
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    className="px-3 py-2 border rounded-lg flex-1"
+                  />
+                </div>
+
+                {/* Orders List */}
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="text-gray-600">Loading orders...</div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white border rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Order ID
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Customer
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Items
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {orders.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                              No orders found
+                            </td>
+                          </tr>
+                        ) : (
+                          orders.map((order) => (
+                            <tr key={order._id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                #{order._id.slice(-8)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {order.isGuestOrder ? (
+                                  <div>
+                                    <div className="font-medium">Guest User</div>
+                                    <div className="text-xs text-gray-500">{order.customer?.email}</div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <div className="font-medium">{order.user?.fullName || order.customer?.name || 'N/A'}</div>
+                                    <div className="text-xs text-gray-500">{order.user?.email || order.customer?.email}</div>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {order.items?.length || 0} items
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                ₹{order.total?.toFixed(2) || '0.00'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  order.status === 'delivered' 
+                                    ? 'bg-green-100 text-green-800'
+                                    : order.status === 'shipped'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : order.status === 'confirmed'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : order.status === 'cancelled'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {order.status}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <select
+                                  value={order.status}
+                                  onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                                  className="text-xs border rounded px-2 py-1"
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="confirmed">Confirmed</option>
+                                  <option value="shipped">Shipped</option>
+                                  <option value="delivered">Delivered</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
