@@ -172,6 +172,132 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/orders/guest - Create new guest order (COD only)
+router.post('/guest', async (req, res) => {
+  try {
+    const { 
+      customerInfo,
+      shippingAddress, 
+      items,
+      subtotal,
+      tax,
+      shippingCost,
+      total,
+      notes = '',
+      paymentMethod = 'cod'
+    } = req.body;
+
+    // Validate required fields
+    if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer name, email, and phone are required'
+      });
+    }
+
+    if (!shippingAddress?.street) {
+      return res.status(400).json({
+        success: false,
+        message: 'Shipping address is required'
+      });
+    }
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order items are required'
+      });
+    }
+
+    // Validate stock availability for each item
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: `Product not found: ${item.name}`
+        });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+        });
+      }
+    }
+
+    // Prepare order items
+    const orderItems = items.map(item => ({
+      product: item.productId,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.price * item.quantity
+    }));
+
+    // Format address
+    const finalAddress = {
+      ...shippingAddress,
+      fullAddress: `${shippingAddress.street}, ${shippingAddress.city || 'City'}, ${shippingAddress.state || 'State'} - ${shippingAddress.zipCode || '000000'}`
+    };
+
+    // Create order
+    const order = new Order({
+      user: null, // No user for guest orders
+      isGuestOrder: true,
+      customer: {
+        name: customerInfo.name,
+        email: customerInfo.email,
+        phone: customerInfo.phone,
+        address: finalAddress
+      },
+      items: orderItems,
+      subtotal: subtotal || 0,
+      shipping: shippingCost || 50,
+      tax: tax || 0,
+      total: total || 0,
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
+      notes: notes
+    });
+
+    await order.save();
+
+    // Update product stock
+    for (const item of items) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stock: -item.quantity } }
+      );
+    }
+
+    // Populate the order for response
+    await order.populate('items.product');
+
+    res.status(201).json({
+      success: true,
+      message: 'Guest order created successfully',
+      order: {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        total: order.total,
+        status: order.status,
+        paymentMethod: order.paymentMethod,
+        customer: order.customer,
+        items: order.items,
+        createdAt: order.createdAt,
+        isGuestOrder: order.isGuestOrder
+      }
+    });
+
+  } catch (error) {
+    console.error('Create guest order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating guest order'
+    });
+  }
+});
+
 // PUT /api/orders/:id/status - Update order status (Admin only)
 router.put('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
   try {

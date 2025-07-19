@@ -9,7 +9,8 @@ import {
   Phone,
   User as UserIcon,
   Calendar,
-  Eye
+  Eye,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,6 +46,34 @@ interface AdminUser {
   lastLogin?: string;
 }
 
+interface AdminOrder {
+  _id: string;
+  orderNumber: string;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+    address: {
+      fullAddress: string;
+    };
+  };
+  items: Array<{
+    product: {
+      name: string;
+      price: number;
+    };
+    quantity: number;
+    total: number;
+  }>;
+  total: number;
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  isGuestOrder: boolean;
+  createdAt: string;
+  notes?: string;
+}
+
 interface AdminDashboardProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,6 +83,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   const [activeTab, setActiveTab] = useState('overview');
   const [passwordResets, setPasswordResets] = useState<PasswordReset[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -66,6 +96,10 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   // User Management
   const [userSearch, setUserSearch] = useState('');
   const [userPage] = useState(1);
+  
+  // Order Management
+  const [orderFilter, setOrderFilter] = useState('all');
+  const [orderSearch, setOrderSearch] = useState('');
   
   const { user } = useAuth();
 
@@ -155,6 +189,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Shield },
+    { id: 'orders', label: 'Order Management', icon: Package },
     { id: 'password-resets', label: 'Password Resets', icon: Clock },
     { id: 'users', label: 'User Management', icon: Users },
   ];

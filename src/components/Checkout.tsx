@@ -21,7 +21,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
     name: userProfile?.fullName || '',
     email: user?.email || '',
     phone: userProfile?.phone || '',
-    address: '',
+    address: userProfile?.address?.street || '',
     notes: ''
   });
 
@@ -53,6 +53,12 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const handleCODOrder = async () => {
     try {
       const orderData = {
+        customerInfo: {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          isGuest: !user
+        },
         shippingAddress: {
           street: customerInfo.address,
           city: 'Not specified',
@@ -60,16 +66,35 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
           zipCode: '000000',
           country: 'India'
         },
-        notes: customerInfo.notes
+        items: state.items.map(item => ({
+          productId: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+          size: item.product.size
+        })),
+        paymentMethod: 'cod',
+        subtotal: subtotal,
+        tax: tax,
+        shippingCost: shippingCost,
+        total: total,
+        notes: customerInfo.notes,
+        orderType: user ? 'registered' : 'guest'
       };
 
-      const data = await api.createCODOrder(orderData);
+      // Use guest order API for non-authenticated users, regular COD for authenticated users
+      const data = user 
+        ? await api.createCODOrder(orderData)
+        : await api.createGuestOrder(orderData);
 
       if (data.success) {
         clearCart();
         onOrderComplete({
           order: data.order,
-          paymentMethod: 'Cash on Delivery'
+          paymentMethod: 'Cash on Delivery',
+          message: user 
+            ? 'Order created successfully!' 
+            : 'Guest order created successfully! You will receive confirmation via email.'
         });
       } else {
         alert('Failed to create order: ' + data.message);
@@ -133,7 +158,25 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
             {step === 1 ? (
               /* Step 1: Customer Information */
               <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">Shipping Information</h2>
+                  {!user && (
+                    <div className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                      ✓ Guest Checkout Available
+                    </div>
+                  )}
+                </div>
+                
+                {!user && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 className="font-medium text-blue-800 mb-2">Shopping as Guest</h3>
+                    <p className="text-sm text-blue-600">
+                      You can complete your purchase without creating an account. 
+                      Your order will be processed and you'll receive confirmation via email.
+                    </p>
+                  </div>
+                )}
+                
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>

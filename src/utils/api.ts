@@ -93,6 +93,12 @@ export const api = {
     body: orderData
   }),
 
+  createGuestOrder: (orderData: any) => apiCall('/orders/guest', {
+    method: 'POST',
+    body: orderData,
+    requireAuth: false
+  }),
+
   // Admin endpoints
   getAllOrders: () => apiCall('/orders/admin/all'),
   
