@@ -66,16 +66,32 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     defaultHeaders.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    });
 
-  const data = await response.json();
-  return { response, data };
+    // Check if response is ok
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return { response, data };
+  } catch (error) {
+    console.error('API call failed:', error);
+    
+    // Check if it's a network error (backend not available)
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error('Backend server is not available. Please deploy the backend first or use demo mode.');
+    }
+    
+    throw error;
+  }
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -132,6 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Login error:', error);
+      
+      // Check if it's a backend unavailable error
+      if (error instanceof Error && error.message.includes('Backend server is not available')) {
+        return { 
+          success: false, 
+          message: 'Backend server is not deployed yet. Please deploy the backend to use authentication features.' 
+        };
+      }
+      
       return { success: false, message: 'Network error. Please try again.' };
     }
   };

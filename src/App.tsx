@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
@@ -9,12 +9,43 @@ import Cart from './components/Cart';
 import ProductDetail from './components/ProductDetail';
 import Checkout from './components/Checkout';
 import OrderSuccess from './components/OrderSuccess';
+import DemoModeNotice from './components/DemoModeNotice';
 import { Product } from './types';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [orderInfo, setOrderInfo] = useState<any>(null);
+  const [showDemoNotice, setShowDemoNotice] = useState(false);
+
+  // Check if backend is available on app load
+  useEffect(() => {
+    const checkBackendAvailability = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(`${apiUrl}/health`, { 
+          method: 'GET',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          setShowDemoNotice(true);
+        }
+      } catch (error) {
+        // Backend is not available, show demo notice after a brief delay
+        setTimeout(() => {
+          setShowDemoNotice(true);
+        }, 3000);
+      }
+    };
+
+    checkBackendAvailability();
+  }, []);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -124,6 +155,11 @@ function App() {
           {renderPage()}
           <Cart onCheckout={handleCheckout} />
           <ProductDetail product={selectedProduct} onClose={handleCloseProductDetail} />
+          
+          {/* Demo Mode Notice */}
+          {showDemoNotice && (
+            <DemoModeNotice onClose={() => setShowDemoNotice(false)} />
+          )}
         </div>
       </CartProvider>
     </AuthProvider>

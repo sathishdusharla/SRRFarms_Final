@@ -41,12 +41,31 @@ const UPIPayment: React.FC<UPIPaymentProps> = ({
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
       if (data.success) {
         setUpiInfo(data.upiInfo);
       }
     } catch (error) {
       console.error('Error fetching UPI info:', error);
+      
+      // Fallback UPI info when backend is not available
+      setUpiInfo({
+        upiId: '9490507045-4@ybl',
+        merchantName: 'SRR Farms',
+        qrCodeUrl: '/images/upi-qr-code.svg',
+        instructions: [
+          'Scan the QR code or use the UPI ID to make payment',
+          'Enter the exact order amount',
+          'Take a screenshot of the successful payment',
+          'Upload the screenshot when placing the order',
+          'Note: Backend is required for order processing'
+        ]
+      });
     }
   };
 
@@ -104,6 +123,10 @@ const UPIPayment: React.FC<UPIPaymentProps> = ({
         body: formData
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -113,7 +136,13 @@ const UPIPayment: React.FC<UPIPaymentProps> = ({
       }
     } catch (error: any) {
       console.error('UPI payment error:', error);
-      alert(error.message || 'Payment failed. Please try again.');
+      
+      // Handle backend unavailable case
+      if (error.message.includes('Failed to fetch') || error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        alert('Backend server is not available. Please deploy the backend to process payments. For now, this is a frontend demonstration.');
+      } else {
+        alert(error.message || 'Payment failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
