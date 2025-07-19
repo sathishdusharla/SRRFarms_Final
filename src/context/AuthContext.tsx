@@ -54,8 +54,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// Helper function to make API calls
-const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+// Helper function to make API calls with retry logic
+const apiCall = async (endpoint: string, options: RequestInit = {}, retryCount = 3): Promise<{ response: Response; data: any }> => {
   const token = localStorage.getItem('token');
   
   const defaultHeaders: HeadersInit = {
@@ -66,32 +66,56 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     defaultHeaders.Authorization = `Bearer ${token}`;
   }
 
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          ...options.headers,
+        },
+      });
 
-    // Check if response is ok
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
+      // If rate limited (429), wait and retry
+      if (response.status === 429 && attempt < retryCount) {
+        const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+        console.log(`Rate limited. Retrying in ${waitTime/1000}s... (attempt ${attempt + 1}/${retryCount + 1})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
 
-    const data = await response.json();
-    return { response, data };
-  } catch (error) {
-    console.error('API call failed:', error);
-    
-    // Check if it's a network error (backend not available)
-    if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error('Backend server is not available. Please deploy the backend first or use demo mode.');
+      // Check if response is ok
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Server is busy. Please try again in a few minutes.');
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return { response, data };
+    } catch (error) {
+      // If it's the last attempt or not a retryable error, throw
+      if (attempt === retryCount || !(error instanceof TypeError)) {
+        console.error('API call failed:', error);
+        
+        // Check if it's a network error (backend not available)
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+          throw new Error('Backend server is not available. Please deploy the backend first or use demo mode.');
+        }
+        
+        throw error;
+      }
+      
+      // Wait before retrying on network errors
+      const waitTime = Math.pow(2, attempt) * 1000;
+      console.log(`Network error. Retrying in ${waitTime/1000}s... (attempt ${attempt + 1}/${retryCount + 1})`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
-    
-    throw error;
   }
+  
+  // This should never be reached, but TypeScript needs it
+  throw new Error('Maximum retry attempts exceeded');
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -178,7 +202,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      return { success: false, message: 'Network error. Please try again.' };
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Server is busy')) {
+          return { success: false, message: 'Server is currently busy. Please wait a moment and try again.' };
+        }
+        if (error.message.includes('Backend server is not available')) {
+          return { 
+            success: false, 
+            message: 'Backend server is not deployed yet. Please deploy the backend to use authentication features.' 
+          };
+        }
+      }
+      
+      return { success: false, message: 'Network error. Please try again in a few moments.' };
     }
   };
 
