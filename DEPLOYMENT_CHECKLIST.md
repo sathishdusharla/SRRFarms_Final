@@ -2,12 +2,12 @@
 
 ## ✅ Backend Deployment Steps (Choose One Platform)
 
-### **RECOMMENDED: Railway Deployment**
+### **RECOMMENDED: Render.com (100% FREE)**
 
 #### **Prerequisites:**
 - [ ] GitHub account
 - [ ] MongoDB Atlas account (free)
-- [ ] Gmail account for email services
+- [ ] Gmail account for email services (optional)
 
 #### **Step 1: Database Setup**
 - [ ] Create MongoDB Atlas account
@@ -17,18 +17,21 @@
 - [ ] Get connection string
 - [ ] Test connection
 
-#### **Step 2: Railway Deployment**
-- [ ] Go to [railway.app](https://railway.app)
-- [ ] Sign up with GitHub
-- [ ] Click "New Project" → "Deploy from GitHub repo"
-- [ ] Select `SRRFarms_Final` repository
-- [ ] Set root directory to `server`
-- [ ] Verify build settings:
+#### **Step 2: Render.com Deployment (FREE)**
+- [ ] Go to [render.com](https://render.com)
+- [ ] Sign up with GitHub (no credit card needed)
+- [ ] Click "New +" → "Web Service"
+- [ ] Select "Build and deploy from a Git repository"
+- [ ] Connect GitHub and choose `SRRFarms_Final` repository
+- [ ] Configure settings:
+  - Name: `srrfarms-backend`
+  - Root Directory: `server`
   - Build Command: `npm install`
   - Start Command: `npm start`
+- [ ] Choose **FREE** plan (512MB RAM, 0.1 CPU)
 
 #### **Step 3: Environment Variables**
-Add these in Railway dashboard → Variables:
+Add these in Render dashboard → Environment Variables:
 
 ```env
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/srrfarms?retryWrites=true&w=majority
@@ -39,7 +42,7 @@ EMAIL_PORT=587
 EMAIL_SECURE=false
 EMAIL_USER=your_business_email@gmail.com
 EMAIL_PASS=your_gmail_app_password
-PORT=3001
+PORT=10000
 NODE_ENV=production
 FRONTEND_URL=https://your-netlify-site.netlify.app
 RATE_LIMIT_WINDOW_MS=900000
@@ -52,16 +55,16 @@ UPI_ID=9490507045-4@ybl
 UPI_MERCHANT_NAME=SRR Farms
 ```
 
-#### **Step 4: Deploy & Test**
-- [ ] Click "Deploy" in Railway
-- [ ] Wait for build to complete (~3-5 minutes)
-- [ ] Get your backend URL (e.g., `https://your-app.railway.app`)
-- [ ] Test API endpoint: `https://your-app.railway.app/api/health`
+#### **Step 4: Deploy & Test (FREE)**
+- [ ] Click "Create Web Service" in Render
+- [ ] Wait for build to complete (~5-10 minutes)
+- [ ] Get your backend URL (e.g., `https://your-app.onrender.com`)
+- [ ] Test API endpoint: `https://your-app.onrender.com/api/health`
 
 #### **Step 5: Update Frontend**
 - [ ] Go to Netlify dashboard
 - [ ] Navigate to Site settings → Environment variables
-- [ ] Update `VITE_API_URL` to your Railway URL
+- [ ] Update `VITE_API_URL` to your Render URL
 - [ ] Redeploy frontend
 
 ---
@@ -71,15 +74,15 @@ UPI_MERCHANT_NAME=SRR Farms
 ### Test Your Deployed Backend:
 ```bash
 # Test health endpoint
-curl https://your-railway-app.railway.app/api/health
+curl https://your-app.onrender.com/api/health
 
 # Test products endpoint
-curl https://your-railway-app.railway.app/api/products
+curl https://your-app.onrender.com/api/products
 ```
 
 ### Update Frontend Environment:
 1. Netlify Dashboard → Site Settings → Environment Variables
-2. Update: `VITE_API_URL=https://your-railway-app.railway.app/api`
+2. Update: `VITE_API_URL=https://your-app.onrender.com/api`
 3. Trigger redeploy
 
 ---
@@ -90,22 +93,23 @@ curl https://your-railway-app.railway.app/api/products
 1. **Build fails**: Check Node.js version (use Node 18)
 2. **Database connection fails**: Verify MongoDB URI and network access
 3. **CORS errors**: Ensure `FRONTEND_URL` matches your Netlify URL
-4. **Email not working**: Generate Gmail app password
+4. **App sleeps**: Use UptimeRobot.com (free) to ping every 5 minutes
 
 ### Support Links:
-- Railway Docs: https://docs.railway.app
+- Render Docs: https://render.com/docs
 - MongoDB Atlas: https://docs.atlas.mongodb.com
-- Gmail App Passwords: https://support.google.com/accounts/answer/185833
+- Free Monitoring: https://uptimerobot.com
 
 ---
 
 ## 🎉 **Success Criteria**
 
 Your backend is successfully deployed when:
-- [ ] Railway shows "Deployed" status
+- [ ] Render shows "Live" status
 - [ ] Health endpoint returns 200 OK
 - [ ] Products API returns data
 - [ ] Frontend can authenticate users
 - [ ] Orders can be placed successfully
 
 **Estimated Time: 15-30 minutes**
+**Total Cost: $0.00/month (100% FREE)**

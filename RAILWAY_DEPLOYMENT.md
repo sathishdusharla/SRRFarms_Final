@@ -1,27 +1,33 @@
-# Railway Deployment Instructions
+# ⚠️ Railway is Now Paid - Use Free Alternatives Below
 
-## 🚀 Deploy Backend on Railway (Recommended)
+## 🚀 FREE Backend Deployment Options
 
-### Step 1: Sign up for Railway
-1. Go to [railway.app](https://railway.app)
+### **RECOMMENDED: Render.com (100% FREE)**
+
+#### Step 1: Sign up for Render
+1. Go to [render.com](https://render.com)
 2. Sign up with GitHub account
 3. Connect your GitHub account
 
-### Step 2: Create New Project
-1. Click "New Project"
-2. Select "Deploy from GitHub repo"
-3. Choose `SRRFarms_Final` repository
-4. Railway will automatically detect it's a Node.js project
+#### Step 2: Create Web Service (FREE)
+1. Click "New +" → "Web Service"
+2. Select "Build and deploy from a Git repository"
+3. Connect GitHub and choose `SRRFarms_Final` repository
+4. Configure settings:
+   - **Name**: `srrfarms-backend`
+   - **Region**: Choose closest to you
+   - **Branch**: `main`
+   - **Root Directory**: `server`
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
 
-### Step 3: Configure Build Settings
-Railway should auto-detect, but verify:
-- **Root Directory**: `server`
-- **Build Command**: `npm install`
-- **Start Command**: `npm start`
-- **Port**: `3001` (from your server.js)
+#### Step 3: Configure Free Tier Settings
+- **Instance Type**: `Free` (0.1 CPU, 512 MB RAM)
+- **Auto-Deploy**: `Yes`
 
-### Step 4: Add Environment Variables
-In Railway dashboard, go to Variables tab and add:
+#### Step 4: Add Environment Variables (FREE)
+In Render dashboard, go to Environment tab and add:
 
 ```env
 # Database
@@ -62,13 +68,38 @@ UPI_ID=9490507045-4@ybl
 UPI_MERCHANT_NAME=SRR Farms
 ```
 
-### Step 5: Deploy
-1. Click "Deploy"
-2. Railway will build and deploy automatically
-3. You'll get a URL like: `https://your-app-name.railway.app`
+#### Step 5: Deploy (FREE)
+1. Click "Create Web Service"
+2. Render will build and deploy automatically (takes 5-10 minutes)
+3. You'll get a FREE URL like: `https://your-app-name.onrender.com`
+4. **Note**: Free tier may sleep after 15 minutes of inactivity
 
-### Step 6: Update Frontend
+#### Step 6: Update Frontend
 After deployment, update your Netlify environment variables:
-- `VITE_API_URL=https://your-railway-app.railway.app/api`
+- `VITE_API_URL=https://your-app-name.onrender.com/api`
 
-## 🎯 That's it! Your backend will be live in ~5 minutes!
+## 🎯 100% FREE! Your backend will be live in ~10 minutes!
+
+---
+
+## 🆓 Alternative FREE Options:
+
+### **Option 2: Vercel (FREE)**
+1. Go to [vercel.com](https://vercel.com)
+2. Import GitHub repository
+3. Set root directory to `server`
+4. Deploy (serverless functions)
+
+### **Option 3: Netlify Functions (FREE)**
+1. Deploy serverless functions on Netlify
+2. Limited but free
+
+### **Option 4: Heroku Alternative - Railway (Now Paid)**
+⚠️ Railway is no longer free, but you can try their $5 trial
+
+## 🏆 **RECOMMENDATION: Use Render.com**
+- 100% FREE tier
+- 512MB RAM, 0.1 CPU
+- Automatic SSL
+- GitHub integration
+- Perfect for your Node.js backend
