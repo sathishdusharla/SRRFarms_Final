@@ -1,7 +1,7 @@
 # 🚀 READY TO DEPLOY - Your Configuration
 
 ## ✅ **MongoDB Database**: READY
-- **Connection String**: `mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/srrfarms?retryWrites=true&w=majority&appName=Clustersrr`
+- **Connection String**: `mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/?retryWrites=true&w=majority&appName=Clustersrr`
 - **Status**: ✅ Connected and Ready
 
 ---
@@ -35,7 +35,7 @@ Plan: FREE (512 MB RAM)
 Copy and paste these **EXACT** values in Render dashboard:
 
 ```env
-MONGODB_URI=mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/srrfarms?retryWrites=true&w=majority&appName=Clustersrr
+MONGODB_URI=mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/?retryWrites=true&w=majority&appName=Clustersrr
 JWT_SECRET=srrfarms_super_secure_jwt_secret_key_2024_production_ready_sathish
 JWT_EXPIRES_IN=7d
 PORT=10000

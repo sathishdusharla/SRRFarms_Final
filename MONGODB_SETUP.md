@@ -39,12 +39,12 @@
 
 ### ✅ Your Actual Connection String:
 ```
-mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/srrfarms?retryWrites=true&w=majority&appName=Clustersrr
+mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/?retryWrites=true&w=majority&appName=Clustersrr
 ```
 
-### Step 6: Use This Connection String
-✅ **Perfect!** Use this exact string as `MONGODB_URI` in your backend environment variables.
+### Step 6: Use This Exact Connection String
+✅ **Perfect!** Use this EXACT string as `MONGODB_URI` in your backend environment variables.
 
-**Note:** I added `/srrfarms` as the database name to organize your data properly.
+**Note:** This will use the default database. Your backend will create collections automatically.
 
 ## 🎯 Your database is ready for production!
