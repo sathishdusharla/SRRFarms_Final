@@ -37,12 +37,14 @@
 5. Replace `<password>` with your user password
 6. Replace `<dbname>` with `srrfarms`
 
-### Example Connection String:
+### ✅ Your Actual Connection String:
 ```
-mongodb+srv://srrfarms:YOUR_PASSWORD@cluster0.abc123.mongodb.net/srrfarms?retryWrites=true&w=majority
+mongodb+srv://dusharlasathish:EiTIDwE7eQtwa4Tk@clustersrr.xxo8sse.mongodb.net/srrfarms?retryWrites=true&w=majority&appName=Clustersrr
 ```
 
-### Step 6: Test Connection
-Use this connection string as `MONGODB_URI` in your backend environment variables.
+### Step 6: Use This Connection String
+✅ **Perfect!** Use this exact string as `MONGODB_URI` in your backend environment variables.
+
+**Note:** I added `/srrfarms` as the database name to organize your data properly.
 
 ## 🎯 Your database is ready for production!
