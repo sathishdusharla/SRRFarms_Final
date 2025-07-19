@@ -74,7 +74,8 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   // API helper function
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:3001/api${endpoint}`, {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
