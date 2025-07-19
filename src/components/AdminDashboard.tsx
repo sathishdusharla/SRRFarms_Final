@@ -153,9 +153,12 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     
     setLoading(true);
     try {
+      console.log('🔍 Fetching password resets with filter:', resetFilter);
       const { data } = await apiCall(`/admin/password-resets?status=${resetFilter}`);
+      console.log('📦 Password resets API response:', data);
       if (data.success) {
-        const resets = data.data.passwordResets;
+        const resets = data.data.requests || data.data.passwordResets || [];
+        console.log('✅ Final password resets:', resets);
         setPasswordResets(resets);
         setDataCache(prev => ({ 
           ...prev, 
@@ -514,7 +517,15 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
 
                 {/* Password Reset Requests */}
                 <div className="space-y-4">
-                  {passwordResets.map((reset) => (
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="inline-flex items-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-600 mr-3"></div>
+                        <span className="text-gray-600">Loading password resets...</span>
+                      </div>
+                    </div>
+                  ) : passwordResets && passwordResets.length > 0 ? (
+                    passwordResets.map((reset) => (
                     <div key={reset._id} className="bg-white border border-gray-200 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -572,7 +583,19 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                         )}
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Password Reset Requests</h3>
+                      <p className="text-gray-500">
+                        {resetFilter === 'all' 
+                          ? 'No password reset requests found.'
+                          : `No ${resetFilter} password reset requests found.`
+                        }
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -640,10 +663,10 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {orders.length === 0 ? (
+                        {!orders || orders.length === 0 ? (
                           <tr>
                             <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                              No orders found
+                              {loading ? 'Loading orders...' : 'No orders found'}
                             </td>
                           </tr>
                         ) : (
@@ -729,7 +752,15 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
 
                 {/* Users List */}
                 <div className="space-y-4">
-                  {users.map((userItem) => (
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="inline-flex items-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-600 mr-3"></div>
+                        <span className="text-gray-600">Loading users...</span>
+                      </div>
+                    </div>
+                  ) : users && users.length > 0 ? (
+                    users.map((userItem) => (
                     <div key={userItem._id} className="bg-white border border-gray-200 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-4">
@@ -774,7 +805,16 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
+                      <p className="text-gray-500">
+                        {userSearch ? `No users found matching "${userSearch}".` : 'No users found.'}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
