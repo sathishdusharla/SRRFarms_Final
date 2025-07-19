@@ -89,6 +89,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps) {
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [passwordResets, setPasswordResets] = useState<PasswordReset[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -117,8 +118,12 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   // Order Management
   const [orderFilter, setOrderFilter] = useState('all');
   const [orderSearch, setOrderSearch] = useState('');
-  
-  const { user } = useAuth();
+
+  // Handle admin logout
+  const handleLogout = () => {
+    signOut();
+    onClose();
+  };
 
   // Cache duration: 2 minutes
   const CACHE_DURATION = 2 * 60 * 1000;
@@ -352,7 +357,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
           <div className="text-yellow-600 mb-2 text-lg font-semibold">Access Denied</div>
           <div className="text-gray-600 mb-4">You don't have admin privileges.</div>
           <button
-            onClick={onClose}
+            onClick={handleLogout}
             className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
           >
             Close
@@ -404,6 +409,19 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                 );
               })}
             </nav>
+            
+            {/* Logout Button */}
+            <div className="mt-auto pt-6">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors bg-red-50 text-red-700 hover:bg-red-100"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
           </div>
 
           {/* Main Content */}
@@ -413,8 +431,9 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                 {tabs.find(tab => tab.id === activeTab)?.label}
               </h2>
               <button
-                onClick={onClose}
+                onClick={handleLogout}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Logout"
               >
                 ✕
               </button>

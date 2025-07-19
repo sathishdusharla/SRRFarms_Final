@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Header from './components/Header';
 import HomePage from './components/HomePage';
 import ProductsPage from './components/ProductsPage';
@@ -9,14 +9,27 @@ import Cart from './components/Cart';
 import ProductDetail from './components/ProductDetail';
 import Checkout from './components/Checkout';
 import OrderSuccess from './components/OrderSuccess';
+import AdminDashboard from './components/AdminDashboard';
 import DemoModeNotice from './components/DemoModeNotice';
 import { Product } from './types';
 
 function App() {
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
+  const { user, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [orderInfo, setOrderInfo] = useState<any>(null);
   const [showDemoNotice, setShowDemoNotice] = useState(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
 
   // Check if backend is available on app load
   useEffect(() => {
@@ -46,6 +59,42 @@ function App() {
 
     checkBackendAvailability();
   }, []);
+
+  // Check if user is admin and show admin dashboard automatically
+  useEffect(() => {
+    if (user?.isAdmin) {
+      setShowAdminDashboard(true);
+    } else {
+      setShowAdminDashboard(false);
+    }
+  }, [user]);
+
+  // If user is admin, show only admin dashboard
+  if (user?.isAdmin && showAdminDashboard) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <AdminDashboard 
+          isOpen={true} 
+          onClose={() => {
+            // Admin logout - close dashboard and show regular site
+            setShowAdminDashboard(false);
+          }} 
+        />
+      </div>
+    );
+  }
+
+  // Show loading screen while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -143,26 +192,23 @@ function App() {
     }
   };
 
+  // Regular user view (non-admin)
   return (
-    <AuthProvider>
-      <CartProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Header 
-            onNavigate={handleNavigate} 
-            currentPage={currentPage} 
-            onViewProduct={handleViewProduct}
-          />
-          {renderPage()}
-          <Cart onCheckout={handleCheckout} />
-          <ProductDetail product={selectedProduct} onClose={handleCloseProductDetail} />
-          
-          {/* Demo Mode Notice */}
-          {showDemoNotice && (
-            <DemoModeNotice onClose={() => setShowDemoNotice(false)} />
-          )}
-        </div>
-      </CartProvider>
-    </AuthProvider>
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        onNavigate={handleNavigate} 
+        currentPage={currentPage} 
+        onViewProduct={handleViewProduct}
+      />
+      {renderPage()}
+      <Cart onCheckout={handleCheckout} />
+      <ProductDetail product={selectedProduct} onClose={handleCloseProductDetail} />
+      
+      {/* Demo Mode Notice */}
+      {showDemoNotice && (
+        <DemoModeNotice onClose={() => setShowDemoNotice(false)} />
+      )}
+    </div>
   );
 }
 
