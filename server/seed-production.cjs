@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const Product = require('./server/models/Product');
-const User = require('./server/models/User');
+const Product = require('./models/Product');
+const User = require('./models/User');
 require('dotenv').config();
 
 // Use your MongoDB connection string
