@@ -1,11 +1,11 @@
 [build]
-command = "npm run build"
+command = "npm ci && npm run build"
 publish = "dist"
 
 [build.environment]
 NODE_VERSION = "20"
 CI = "true"
-NODE_ENV = "production"
+NODE_ENV = "development"
 VITE_API_URL = "https://srrfarms-backend.onrender.com/api"
 
 # SPA redirect for React Router
