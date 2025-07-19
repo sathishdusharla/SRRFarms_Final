@@ -103,32 +103,6 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   
   const { user } = useAuth();
 
-  console.log('AdminDashboard render:', { isOpen, user, isAdmin: user?.isAdmin });
-  
-  // Debug alert to make it visible
-  if (isOpen) {
-    console.log('🚨 AdminDashboard is open!', { user: user?.fullName, isAdmin: user?.isAdmin });
-  }
-
-  if (!isOpen) return null;
-  
-  if (!user?.isAdmin) {
-    return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-6">
-          <h3 className="text-lg font-semibold text-red-600 mb-4">Access Denied</h3>
-          <p className="text-gray-600 mb-4">You don't have administrator privileges.</p>
-          <button
-            onClick={onClose}
-            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // API helper function
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('token');
@@ -151,7 +125,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     try {
       const { data } = await apiCall(`/admin/password-resets?status=${resetFilter}`);
       if (data.success) {
-        setPasswordResets(data.data.requests);
+        setPasswordResets(data.data.passwordResets);
       }
     } catch (error) {
       setError('Failed to fetch password resets');
@@ -170,21 +144,6 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
       }
     } catch (error) {
       setError('Failed to fetch users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch orders
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const { data } = await apiCall(`/orders/admin/all?status=${orderFilter}&search=${orderSearch}&limit=20`);
-      if (data.success) {
-        setOrders(data.orders);
-      }
-    } catch (error) {
-      setError('Failed to fetch orders');
     } finally {
       setLoading(false);
     }
@@ -223,10 +182,11 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
       fetchPasswordResets();
     } else if (activeTab === 'users') {
       fetchUsers();
-    } else if (activeTab === 'orders') {
-      fetchOrders();
     }
-  }, [activeTab, resetFilter, userSearch, userPage, orderFilter, orderSearch]);
+  }, [activeTab, resetFilter, userSearch, userPage]);
+
+  // Early returns after all hooks
+  if (!isOpen || !user?.isAdmin) return null;
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Shield },
@@ -338,16 +298,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
 
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button
-                      onClick={() => setActiveTab('orders')}
-                      className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors"
-                    >
-                      <Package className="w-6 h-6 text-green-600 mb-2" />
-                      <h4 className="font-medium text-gray-800">Order Management</h4>
-                      <p className="text-sm text-gray-600">View and manage all orders</p>
-                    </button>
-                    
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <button
                       onClick={() => setActiveTab('password-resets')}
                       className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left transition-colors"
@@ -518,114 +469,6 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Orders Tab */}
-            {activeTab === 'orders' && (
-              <div className="space-y-6">
-                {/* Order Filters */}
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex space-x-2">
-                    {['all', 'pending', 'confirmed', 'delivered', 'cancelled'].map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => setOrderFilter(status)}
-                        className={`px-4 py-2 rounded-lg capitalize transition-colors ${
-                          orderFilter === status
-                            ? 'bg-yellow-600 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  {/* Search */}
-                  <div className="relative flex-1 min-w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      value={orderSearch}
-                      onChange={(e) => setOrderSearch(e.target.value)}
-                      placeholder="Search by order ID, customer name, or email..."
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* Orders List */}
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order._id} className="bg-white border border-gray-200 rounded-lg p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-yellow-600 rounded-full flex items-center justify-center">
-                            <Package className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold text-gray-800">Order #{order._id.slice(-8)}</h3>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                order.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                                order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {order.status}
-                              </span>
-                              {order.isGuestOrder && (
-                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                  Guest
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-600 space-y-1">
-                              <div className="flex items-center space-x-4">
-                                <span><strong>Customer:</strong> {order.customer?.name || 'N/A'}</span>
-                                <span><strong>Email:</strong> {order.customer?.email || 'N/A'}</span>
-                              </div>
-                              <div className="flex items-center space-x-4">
-                                <span><strong>Phone:</strong> {order.customer?.phone || 'N/A'}</span>
-                                <span><strong>Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</span>
-                              </div>
-                              <div><strong>Address:</strong> {order.customer?.address?.fullAddress || 'N/A'}</div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-yellow-600">₹{order.total}</div>
-                          <div className="text-sm text-gray-500">{order.items?.length || 0} items</div>
-                        </div>
-                      </div>
-
-                      {/* Order Items */}
-                      {order.items && order.items.length > 0 && (
-                        <div className="border-t border-gray-200 pt-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">Order Items:</h4>
-                          <div className="space-y-2">
-                            {order.items.map((item, index) => (
-                              <div key={index} className="flex justify-between items-center text-sm">
-                                <span>{item.product?.name || 'Unknown Product'}</span>
-                                <span className="text-gray-600">
-                                  {item.quantity}x @ ₹{item.product?.price} = ₹{item.total}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {orders.length === 0 && !loading && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p>No orders found</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
