@@ -1,0 +1,17 @@
+{
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm install && npm run build",
+    "build:backend": "cd server && npm install",
+    "start": "cd server && npm start",
+    "dev": "concurrently \"npm run dev\" \"cd server && npm run dev\"",
+    "deploy:prepare": "npm run build && cd server && npm install --production"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
