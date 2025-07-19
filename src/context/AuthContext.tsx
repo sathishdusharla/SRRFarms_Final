@@ -130,22 +130,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (token && savedUser) {
         try {
-          // Verify token with server
+          // First set user from localStorage for immediate access
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          
+          // Then verify token with server in background
           const { response, data } = await apiCall('/auth/verify-token', {
             method: 'POST',
           });
 
           if (response.ok && data.success) {
+            // Update with fresh data from server
             setUser(data.user);
           } else {
             // Token is invalid, clear storage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            setUser(null);
           }
         } catch (error) {
           console.error('Token verification failed:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          // Don't clear user data immediately on network errors
+          // Keep using cached user data but log the error
+          console.warn('Using cached user data due to network error');
         }
       }
       

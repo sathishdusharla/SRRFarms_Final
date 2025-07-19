@@ -326,8 +326,38 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     }
   }, [activeTab, isOpen]);
 
-  // Early returns after all hooks
-  if (!isOpen || !user?.isAdmin) return null;
+  // Early returns after all hooks - with better error handling
+  if (!isOpen) return null;
+  
+  // Show loading state if user is not yet loaded
+  if (!user) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <div className="text-gray-600">Loading admin dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show access denied for non-admin users
+  if (!user.isAdmin) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center">
+          <div className="text-yellow-600 mb-2 text-lg font-semibold">Access Denied</div>
+          <div className="text-gray-600 mb-4">You don't have admin privileges.</div>
+          <button
+            onClick={onClose}
+            className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Shield },
@@ -348,7 +378,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
               </div>
               <div>
                 <h3 className="font-semibold text-gray-800">Admin Panel</h3>
-                <p className="text-sm text-gray-600">{user.fullName}</p>
+                <p className="text-sm text-gray-600">{user?.fullName || user?.email || 'Admin User'}</p>
               </div>
             </div>
 
@@ -409,7 +439,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                       <Users className="w-8 h-8 text-blue-600" />
                       <div className="ml-4">
                         <h3 className="text-lg font-semibold text-blue-900">Total Users</h3>
-                        <p className="text-2xl font-bold text-blue-700">-</p>
+                        <p className="text-2xl font-bold text-blue-700">{users?.length || 0}</p>
                       </div>
                     </div>
                   </div>
@@ -420,7 +450,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                       <div className="ml-4">
                         <h3 className="text-lg font-semibold text-yellow-900">Pending Resets</h3>
                         <p className="text-2xl font-bold text-yellow-700">
-                          {passwordResets.filter(r => r.status === 'pending').length}
+                          {passwordResets?.filter(r => r.status === 'pending')?.length || 0}
                         </p>
                       </div>
                     </div>
@@ -430,8 +460,8 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                     <div className="flex items-center">
                       <CheckCircle className="w-8 h-8 text-green-600" />
                       <div className="ml-4">
-                        <h3 className="text-lg font-semibold text-green-900">Completed Today</h3>
-                        <p className="text-2xl font-bold text-green-700">-</p>
+                        <h3 className="text-lg font-semibold text-green-900">Total Orders</h3>
+                        <p className="text-2xl font-bold text-green-700">{orders?.length || 0}</p>
                       </div>
                     </div>
                   </div>
