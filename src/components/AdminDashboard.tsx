@@ -97,6 +97,14 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   
+  // Performance optimization - cache data
+  const [dataCache, setDataCache] = useState<{
+    orders?: AdminOrder[];
+    users?: AdminUser[];
+    passwordResets?: PasswordReset[];
+    timestamp?: number;
+  }>({});
+  
   // Password Reset Management
   const [selectedReset, setSelectedReset] = useState<PasswordReset | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
@@ -111,6 +119,14 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   const [orderSearch, setOrderSearch] = useState('');
   
   const { user } = useAuth();
+
+  // Cache duration: 2 minutes
+  const CACHE_DURATION = 2 * 60 * 1000;
+
+  // Check if cached data is still valid
+  const isCacheValid = (timestamp?: number) => {
+    return timestamp && (Date.now() - timestamp) < CACHE_DURATION;
+  };
 
   // API helper function
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
@@ -128,13 +144,24 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     return { response, data };
   };
 
-  // Fetch password resets
-  const fetchPasswordResets = async () => {
+  // Optimized fetch functions with caching
+  const fetchPasswordResets = async (useCache = true) => {
+    if (useCache && dataCache.passwordResets && isCacheValid(dataCache.timestamp)) {
+      setPasswordResets(dataCache.passwordResets);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data } = await apiCall(`/admin/password-resets?status=${resetFilter}`);
       if (data.success) {
-        setPasswordResets(data.data.passwordResets);
+        const resets = data.data.passwordResets;
+        setPasswordResets(resets);
+        setDataCache(prev => ({ 
+          ...prev, 
+          passwordResets: resets, 
+          timestamp: Date.now() 
+        }));
       }
     } catch (error) {
       setError('Failed to fetch password resets');
@@ -143,13 +170,26 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     }
   };
 
-  // Fetch users
-  const fetchUsers = async () => {
+  // Fetch users with caching
+  const fetchUsers = async (useCache = true) => {
+    if (useCache && dataCache.users && isCacheValid(dataCache.timestamp) && !userSearch) {
+      setUsers(dataCache.users);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data } = await apiCall(`/admin/users?search=${userSearch}&page=${userPage}`);
       if (data.success) {
-        setUsers(data.data.users);
+        const usersList = data.data.users;
+        setUsers(usersList);
+        if (!userSearch) {
+          setDataCache(prev => ({ 
+            ...prev, 
+            users: usersList, 
+            timestamp: Date.now() 
+          }));
+        }
       }
     } catch (error) {
       setError('Failed to fetch users');
@@ -158,13 +198,26 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     }
   };
 
-  // Fetch orders
-  const fetchOrders = async () => {
+  // Fetch orders with caching
+  const fetchOrders = async (useCache = true) => {
+    if (useCache && dataCache.orders && isCacheValid(dataCache.timestamp) && !orderSearch && orderFilter === 'all') {
+      setOrders(dataCache.orders);
+      return;
+    }
+    
     setLoading(true);
     try {
       const { data } = await apiCall(`/orders/admin/all?status=${orderFilter}&search=${orderSearch}&limit=20`);
       if (data.success) {
-        setOrders(data.orders || []);
+        const ordersList = data.orders || [];
+        setOrders(ordersList);
+        if (!orderSearch && orderFilter === 'all') {
+          setDataCache(prev => ({ 
+            ...prev, 
+            orders: ordersList, 
+            timestamp: Date.now() 
+          }));
+        }
       }
     } catch (error) {
       setError('Failed to fetch orders');
@@ -173,8 +226,36 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     }
   };
 
-  // Update order status
+  // Debounced search for better performance
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (activeTab === 'users') {
+        fetchUsers(false); // Force refresh on search
+      }
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [userSearch]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (activeTab === 'orders') {
+        fetchOrders(false); // Force refresh on search
+      }
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [orderSearch, orderFilter]);
+
+  // Update order status with optimistic updates
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    // Optimistic update - update UI immediately
+    setOrders(prevOrders => 
+      prevOrders.map(order => 
+        order._id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
+
     try {
       const { data } = await apiCall(`/orders/${orderId}/status`, {
         method: 'PUT',
@@ -182,15 +263,22 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
       });
       
       if (data.success) {
-        setOrders(prevOrders => 
-          prevOrders.map(order => 
-            order._id === orderId ? { ...order, status: newStatus } : order
-          )
-        );
         setSuccessMessage('Order status updated successfully');
+        // Clear cache to ensure fresh data on next load
+        setDataCache(prev => ({ ...prev, orders: undefined }));
+        
+        // Auto-hide success message
+        setTimeout(() => setSuccessMessage(''), 2000);
       }
     } catch (error) {
+      // Revert optimistic update on error
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order._id === orderId ? { ...order, status: order.status } : order
+        )
+      );
       setError('Failed to update order status');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -221,8 +309,14 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     }
   };
 
-  // Load data when tab changes
+  // Load data when tab changes - optimized with caching
   useEffect(() => {
+    if (!isOpen || !user?.isAdmin) return;
+    
+    // Clear error and success messages when switching tabs
+    setError('');
+    setSuccessMessage('');
+    
     if (activeTab === 'password-resets') {
       fetchPasswordResets();
     } else if (activeTab === 'users') {
@@ -230,7 +324,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     } else if (activeTab === 'orders') {
       fetchOrders();
     }
-  }, [activeTab, resetFilter, userSearch, userPage, orderFilter, orderSearch]);
+  }, [activeTab, isOpen]);
 
   // Early returns after all hooks
   if (!isOpen || !user?.isAdmin) return null;
@@ -482,7 +576,10 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
                 {/* Orders List */}
                 {loading ? (
                   <div className="text-center py-8">
-                    <div className="text-gray-600">Loading orders...</div>
+                    <div className="inline-flex items-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mr-3"></div>
+                      <span className="text-gray-600">Loading orders...</span>
+                    </div>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">

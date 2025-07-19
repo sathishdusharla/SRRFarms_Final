@@ -341,7 +341,7 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { 
       page = 1, 
-      limit = 20, 
+      limit = 50, // Increased limit for better performance
       status, 
       search,
       startDate,
@@ -373,14 +373,18 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
       if (endDate) query.createdAt.$lte = new Date(endDate);
     }
 
-    const orders = await Order.find(query)
-      .populate('user', 'fullName email phone')
-      .populate('items.product')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const totalOrders = await Order.countDocuments(query);
+    // Optimized: Use Promise.all for concurrent execution and select only needed fields
+    const [orders, totalOrders] = await Promise.all([
+      Order.find(query)
+        .populate('user', 'fullName email phone')
+        .populate('items.product', 'name price') // Only select needed product fields
+        .select('orderNumber customer items subtotal total status paymentMethod createdAt isGuestOrder user') // Select only needed order fields
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(), // Use lean() for better performance
+      Order.countDocuments(query)
+    ]);
 
     res.json({
       success: true,

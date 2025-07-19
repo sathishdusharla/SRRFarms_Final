@@ -156,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (identifier: string, password: string) => {
+    setLoading(true);
     try {
       const { response, data } = await apiCall('/auth/login', {
         method: 'POST',
@@ -163,10 +164,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok && data.success) {
+        // Optimized: Store user data immediately
+        const userData = data.user;
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
-        return { success: true, message: data.message };
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        
+        return { success: true, message: data.message || 'Login successful' };
       } else {
         return { success: false, message: data.message || 'Login failed' };
       }
@@ -182,10 +186,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       return { success: false, message: 'Network error. Please try again.' };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (userData: SignUpData) => {
+    setLoading(true);
     try {
       const { response, data } = await apiCall('/auth/register', {
         method: 'POST',
@@ -193,10 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.ok && data.success) {
+        // Optimized: Store user data and login immediately after registration
+        const newUser = data.user;
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
-        return { success: true, message: data.message };
+        localStorage.setItem('user', JSON.stringify(newUser));
+        setUser(newUser);
+        
+        return { success: true, message: data.message || 'Registration successful' };
       } else {
         return { success: false, message: data.message || 'Registration failed' };
       }
@@ -216,6 +226,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       return { success: false, message: 'Network error. Please try again in a few moments.' };
+    } finally {
+      setLoading(false);
     }
   };
 

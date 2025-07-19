@@ -10,7 +10,6 @@ import ProductDetail from './components/ProductDetail';
 import Checkout from './components/Checkout';
 import OrderSuccess from './components/OrderSuccess';
 import DemoModeNotice from './components/DemoModeNotice';
-import DebugAuth from './components/DebugAuth';
 import { Product } from './types';
 
 function App() {
@@ -156,9 +155,6 @@ function App() {
           {renderPage()}
           <Cart onCheckout={handleCheckout} />
           <ProductDetail product={selectedProduct} onClose={handleCloseProductDetail} />
-          
-          {/* Debug Auth Info */}
-          <DebugAuth />
           
           {/* Demo Mode Notice */}
           {showDemoNotice && (

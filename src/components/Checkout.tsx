@@ -17,6 +17,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
   const [showUPIPayment, setShowUPIPayment] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: userProfile?.fullName || '',
     email: user?.email || '',
@@ -51,6 +52,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   };
 
   const handleCODOrder = async () => {
+    setLoading(true);
     try {
       const orderData = {
         customerInfo: {
@@ -102,6 +104,8 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
     } catch (error) {
       console.error('COD order error:', error);
       alert('Failed to create order. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -360,13 +364,16 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
                   </button>
                   <button
                     onClick={handleSubmit}
+                    disabled={loading}
                     className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-colors duration-300 ${
-                      paymentMethod === 'upi' 
+                      loading 
+                        ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                        : paymentMethod === 'upi' 
                         ? 'bg-yellow-600 text-white hover:bg-yellow-700'
                         : 'bg-green-600 text-white hover:bg-green-700'
                     }`}
                   >
-                    {paymentMethod === 'upi' ? 'Proceed to UPI Payment' : 'Confirm COD Order'}
+                    {loading ? 'Processing...' : paymentMethod === 'upi' ? 'Proceed to UPI Payment' : 'Confirm COD Order'}
                   </button>
                 </div>
               </div>
