@@ -104,6 +104,11 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   const { user } = useAuth();
 
   console.log('AdminDashboard render:', { isOpen, user, isAdmin: user?.isAdmin });
+  
+  // Debug alert to make it visible
+  if (isOpen) {
+    console.log('🚨 AdminDashboard is open!', { user: user?.fullName, isAdmin: user?.isAdmin });
+  }
 
   if (!isOpen) return null;
   

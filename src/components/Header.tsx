@@ -27,6 +27,9 @@ export default function Header({ onNavigate, currentPage, onViewProduct }: Heade
   const { toggleCart, getTotalItems } = useCart();
   const { user } = useAuth();
 
+  // Debug admin status
+  console.log('Header: user =', user?.fullName, 'isAdmin =', user?.isAdmin, 'showAdmin =', showAdmin);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsSticky(window.scrollY > 100);
@@ -121,7 +124,10 @@ export default function Header({ onNavigate, currentPage, onViewProduct }: Heade
                 {/* Admin Dashboard Button for Admin Users */}
                 {user.isAdmin && (
                   <button
-                    onClick={() => setShowAdmin(true)}
+                    onClick={() => {
+                      console.log('🚨 Admin button clicked!');
+                      setShowAdmin(true);
+                    }}
                     className="flex items-center space-x-2 p-2 text-gray-700 hover:text-red-600 transition-colors duration-300"
                     title="Admin Dashboard"
                   >
