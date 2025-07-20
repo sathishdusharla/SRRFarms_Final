@@ -19,6 +19,8 @@ app.use(cors({
   ].filter(Boolean),
   credentials: true
 }));
+// Trust first proxy for Render/Heroku deployments
+app.set('trust proxy', 1);
 
 // Rate limiting - more lenient for production
 const limiter = rateLimit({
