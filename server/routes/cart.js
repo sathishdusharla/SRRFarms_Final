@@ -1,10 +1,20 @@
+const express = require('express');
+const router = express.Router();
+const Cart = require('../models/Cart');
+const Product = require('../models/Product');
+const User = require('../models/User');
+const { authenticateToken } = require('../middleware/auth');
+
+// Apply authentication middleware to all cart routes
+router.use(authenticateToken);
+
 // Get user's cart (by email if provided)
 router.get('/', async (req, res) => {
   try {
     const email = req.query.email;
     let userId = req.user._id;
     if (email) {
-      const user = await require('../models/User').findOne({ email });
+      const user = await User.findOne({ email });
       if (user) userId = user._id;
     }
     let cart = await Cart.findOne({ user: userId }).populate('items.product');
@@ -32,7 +42,7 @@ router.put('/', async (req, res) => {
     const email = req.query.email;
     let userId = req.user._id;
     if (email) {
-      const user = await require('../models/User').findOne({ email });
+      const user = await User.findOne({ email });
       if (user) userId = user._id;
     }
     let cart = await Cart.findOne({ user: userId });
@@ -51,37 +61,6 @@ router.put('/', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error saving cart'
-    });
-  }
-});
-const express = require('express');
-const router = express.Router();
-const Cart = require('../models/Cart');
-const Product = require('../models/Product');
-const { authenticateToken } = require('../middleware/auth');
-
-// Apply authentication middleware to all cart routes
-router.use(authenticateToken);
-
-// Get user's cart
-router.get('/', async (req, res) => {
-  try {
-    let cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
-    
-    if (!cart) {
-      cart = new Cart({ user: req.user._id });
-      await cart.save();
-    }
-
-    res.json({
-      success: true,
-      cart: cart
-    });
-  } catch (error) {
-    console.error('Get cart error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving cart'
     });
   }
 });
