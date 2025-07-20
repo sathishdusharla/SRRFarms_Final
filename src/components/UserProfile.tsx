@@ -39,7 +39,7 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
           <p className="text-gray-600 mb-6">Unable to load user profile. Please log in again or refresh the page.</p>
           <button
             className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700"
-            onClick={onClose}
+            onClick={() => { window.location.href = '/'; }}
           >
             Close
           </button>
