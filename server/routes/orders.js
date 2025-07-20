@@ -1,7 +1,15 @@
+const express = require('express');
+const router = express.Router();
+const Order = require('../models/Order');
+const Cart = require('../models/Cart');
+const Product = require('../models/Product');
+const User = require('../models/User');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+
 // GET /api/orders/all - Get all orders (admin only)
 router.get('/all', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const orders = await require('../models/Order').find({})
+    const orders = await Order.find({})
       .populate('user', 'name email')
       .populate('items.product')
       .sort({ createdAt: -1 });
@@ -17,13 +25,6 @@ router.get('/all', authenticateToken, requireAdmin, async (req, res) => {
     });
   }
 });
-const express = require('express');
-const router = express.Router();
-const Order = require('../models/Order');
-const Cart = require('../models/Cart');
-const Product = require('../models/Product');
-const User = require('../models/User');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // GET /api/orders - Get user's orders
 router.get('/', authenticateToken, async (req, res) => {
