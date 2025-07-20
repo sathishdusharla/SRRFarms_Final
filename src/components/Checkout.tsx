@@ -156,6 +156,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       <OrderSuccess orderInfo={orderInfo} onContinueShopping={() => window.location.href = '/'} />
     );
   }
+  }
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
