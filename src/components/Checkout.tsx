@@ -65,7 +65,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
           street: customerInfo.address,
           city: 'Not specified',
           state: 'Not specified',
-          zipCode: '000000',
+          pincode: '000000',
           country: 'India'
         },
         items: state.items.map(item => ({

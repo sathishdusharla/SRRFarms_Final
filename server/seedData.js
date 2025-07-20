@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const products = [
   {
+    frontendId: '1', // Add frontend ID mapping
     name: 'Premium SRR Cow Ghee',
     description: 'Pure A2 cow ghee made using traditional Bilona method. Rich in vitamins A, D, E, and K.',
     size: '250ml',
@@ -30,6 +31,7 @@ const products = [
     }
   },
   {
+    frontendId: '2', // Add frontend ID mapping
     name: 'Premium SRR Cow Ghee',
     description: 'Perfect family size pack of our premium A2 cow ghee. Made with love and traditional methods.',
     size: '500ml',
@@ -57,6 +59,7 @@ const products = [
     }
   },
   {
+    frontendId: '3', // Add frontend ID mapping
     name: 'Premium SRR Cow Ghee',
     description: 'Large family pack perfect for regular cooking. Premium quality A2 cow ghee at the best value.',
     size: '1000ml',

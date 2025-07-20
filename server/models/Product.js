@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
+  frontendId: {
+    type: String,
+    unique: true,
+    required: true,
+    index: true
+  },
   name: {
     type: String,
     required: true,

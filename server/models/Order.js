@@ -4,7 +4,29 @@ const orderItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
+    required: false // Will be populated after order creation if product exists
+  },
+  // Store original frontend product ID for reference
+  frontendProductId: {
+    type: String,
     required: true
+  },
+  // Store product details directly to ensure data integrity
+  productDetails: {
+    name: {
+      type: String,
+      required: true
+    },
+    size: {
+      type: String,
+      required: true
+    },
+    price: {
+      type: Number,
+      required: true
+    },
+    image: String,
+    category: String
   },
   quantity: {
     type: Number,

@@ -84,6 +84,37 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// System status endpoint with database info
+app.get('/api/system-status', async (req, res) => {
+  try {
+    const Product = require('./models/Product');
+    const Order = require('./models/Order');
+    
+    const [productCount, orderCount] = await Promise.all([
+      Product.countDocuments(),
+      Order.countDocuments()
+    ]);
+    
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: {
+        connected: mongoose.connection.readyState === 1,
+        products: productCount,
+        orders: orderCount
+      },
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

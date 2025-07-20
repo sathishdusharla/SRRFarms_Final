@@ -47,10 +47,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/products/:id - Get single product
+// GET /api/products/:id - Get single product (by MongoDB ObjectId or frontend ID)
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    let product;
+    
+    // Try to find by MongoDB ObjectId first
+    if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      product = await Product.findById(req.params.id);
+    }
+    
+    // If not found or not a valid ObjectId, try by frontend ID
+    if (!product) {
+      product = await Product.findOne({ frontendId: req.params.id });
+    }
     
     if (!product) {
       return res.status(404).json({

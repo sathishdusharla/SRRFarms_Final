@@ -123,21 +123,21 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // Create order
     const order = new Order({
-      orderNumber: orderNumber,
-      user: req.user._id,
+      user: null, // No user for guest orders
+      isGuestOrder: true,
       customer: {
-        name: user.fullName || user.name || user.email,
-        email: user.email,
-        phone: user.phone || 'Not provided',
+        name: customerInfo.name,
+        email: customerInfo.email,
+        phone: customerInfo.phone,
         address: finalAddress
       },
-      items: orderItems,
-      subtotal: cart.subtotal,
-      shipping: shipping,
-      tax: tax,
-      total: total,
+      items: processedItems,
+      subtotal: subtotal || 0,
+      shipping: shippingCost || 50,
+      tax: tax || 0,
+      total: total || 0,
       paymentMethod: paymentMethod,
-      paymentDetails: paymentDetails,
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
       notes: notes
     });
 
@@ -209,39 +209,72 @@ router.post('/guest', async (req, res) => {
       });
     }
 
-    // Validate stock availability for each item
+    // Validate and map products
+    const processedItems = [];
+    
     for (const item of items) {
-      const product = await Product.findById(item.productId);
-      if (!product) {
-        return res.status(404).json({
-          success: false,
-          message: `Product not found: ${item.name}`
+      console.log('Processing item:', item);
+      
+      // Try to find product by frontend ID
+      const product = await Product.findOne({ frontendId: item.productId });
+      
+      if (product) {
+        console.log('Found product in database:', product.name);
+        
+        // Check stock availability
+        if (product.stock < item.quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+          });
+        }
+        
+        // Create order item with proper product reference
+        processedItems.push({
+          product: product._id,
+          frontendProductId: item.productId,
+          productDetails: {
+            name: product.name,
+            size: product.size,
+            price: product.price,
+            image: product.image,
+            category: product.category
+          },
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity
         });
-      }
-      if (product.stock < item.quantity) {
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+        
+      } else {
+        console.log('Product not found in database, creating order item with provided details');
+        
+        // For demo purposes, create order item with provided details
+        processedItems.push({
+          product: null,
+          frontendProductId: item.productId,
+          productDetails: {
+            name: item.name || 'Unknown Product',
+            size: item.size || 'N/A',
+            price: item.price,
+            image: item.image || '',
+            category: 'ghee'
+          },
+          quantity: item.quantity,
+          price: item.price,
+          total: item.price * item.quantity
         });
       }
     }
 
-    // Prepare order items
-    const orderItems = items.map(item => ({
-      product: item.productId,
-      quantity: item.quantity,
-      price: item.price,
-      total: item.price * item.quantity
-    }));
-
     // Format address
     const finalAddress = {
       ...shippingAddress,
-      fullAddress: `${shippingAddress.street}, ${shippingAddress.city || 'City'}, ${shippingAddress.state || 'State'} - ${shippingAddress.zipCode || '000000'}`
+      fullAddress: `${shippingAddress.street}, ${shippingAddress.city || 'City'}, ${shippingAddress.state || 'State'} - ${shippingAddress.pincode || '000000'}`
     };
 
     // Create order
     const order = new Order({
+      orderNumber: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
       user: null, // No user for guest orders
       isGuestOrder: true,
       customer: {
@@ -263,11 +296,21 @@ router.post('/guest', async (req, res) => {
     await order.save();
 
     // Update product stock
-    for (const item of items) {
-      await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { stock: -item.quantity } }
-      );
+    for (const item of processedItems) {
+      if (item.product) {
+        try {
+          const updateResult = await Product.findByIdAndUpdate(
+            item.product,
+            { $inc: { stock: -item.quantity } }
+          );
+          if (updateResult) {
+            console.log('Updated stock for product:', item.productDetails.name);
+          }
+        } catch (error) {
+          console.log('Error updating stock for product:', item.productDetails.name, error.message);
+          // Continue with order creation even if stock update fails
+        }
+      }
     }
 
     // Populate the order for response
@@ -293,7 +336,8 @@ router.post('/guest', async (req, res) => {
     console.error('Create guest order error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creating guest order'
+      message: 'Error creating guest order',
+      error: error.message // Include error details for debugging
     });
   }
 });

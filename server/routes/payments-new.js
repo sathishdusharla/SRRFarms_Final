@@ -173,6 +173,15 @@ router.post('/create-cod-order', async (req, res) => {
   try {
     const { shippingAddress, notes = '' } = req.body;
 
+    // For demo purposes, redirect to guest order if no user authentication
+    if (!req.user || !req.user._id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please use the guest order endpoint for COD orders without authentication',
+        redirect: '/api/orders/guest'
+      });
+    }
+
     // Get user details
     const user = await User.findById(req.user._id);
     if (!user) {
