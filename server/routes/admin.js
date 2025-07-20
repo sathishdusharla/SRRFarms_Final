@@ -510,4 +510,135 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+// TEMPORARY: Public admin endpoints for demo/setup (remove in production)
+const Product = require('../models/Product');
+
+// GET /api/admin/seed-database-public - Seed database with products (public for demo)
+router.get('/seed-database-public', async (req, res) => {
+  try {
+    // Clear existing products
+    await Product.deleteMany({});
+    
+    const products = [
+      {
+        frontendId: '1',
+        name: 'Premium SRR Cow Ghee',
+        description: 'Pure A2 cow ghee made using traditional Bilona method. Rich in vitamins A, D, E, and K.',
+        size: '250ml',
+        price: 500,
+        image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg?auto=compress&cs=tinysrgb&w=400',
+        category: 'ghee',
+        stock: 50,
+        rating: 5,
+        reviews: 127,
+        badge: 'Bestseller',
+        benefits: [
+          '100% Pure A2 Cow Milk',
+          'Traditional Bilona Method',
+          'No Chemicals or Preservatives',
+          'Rich in Essential Vitamins',
+          'Boosts Immunity'
+        ],
+        nutritionalInfo: {
+          calories: 900,
+          fat: 100,
+          protein: 0,
+          carbs: 0,
+          vitamins: ['A', 'D', 'E', 'K']
+        }
+      },
+      {
+        frontendId: '2',
+        name: 'Premium SRR Cow Ghee',
+        description: 'Perfect family size pack of our premium A2 cow ghee. Made with love and traditional methods.',
+        size: '500ml',
+        price: 1000,
+        originalPrice: 1100,
+        image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg?auto=compress&cs=tinysrgb&w=400',
+        category: 'ghee',
+        stock: 30,
+        rating: 4.5,
+        reviews: 98,
+        badge: 'Value Pack',
+        benefits: [
+          'Family Size Pack',
+          'Better Value for Money',
+          'Traditional Bilona Method',
+          'Grass-Fed Cows',
+          'Heart Healthy'
+        ],
+        nutritionalInfo: {
+          calories: 900,
+          fat: 100,
+          protein: 0,
+          carbs: 0,
+          vitamins: ['A', 'D', 'E', 'K']
+        }
+      },
+      {
+        frontendId: '3',
+        name: 'Premium SRR Cow Ghee',
+        description: 'Large family pack perfect for regular cooking. Premium quality A2 cow ghee at the best value.',
+        size: '1000ml',
+        price: 1500,
+        originalPrice: 1700,
+        image: 'https://images.pexels.com/photos/4198019/pexels-photo-4198019.jpeg?auto=compress&cs=tinysrgb&w=400',
+        category: 'ghee',
+        stock: 20,
+        rating: 5,
+        reviews: 56,
+        badge: 'Family Pack',
+        benefits: [
+          'Large Family Pack',
+          'Best Value for Money',
+          'Premium Quality',
+          'Long Shelf Life',
+          'Authentic Taste'
+        ],
+        nutritionalInfo: {
+          calories: 900,
+          fat: 100,
+          protein: 0,
+          carbs: 0,
+          vitamins: ['A', 'D', 'E', 'K']
+        }
+      }
+    ];
+    
+    // Insert new products
+    const insertedProducts = await Product.insertMany(products);
+    
+    // Get stats
+    const [productCount, orderCount] = await Promise.all([
+      Product.countDocuments(),
+      Order.countDocuments()
+    ]);
+    
+    res.json({
+      success: true,
+      message: 'Database seeded successfully',
+      data: {
+        productsCreated: insertedProducts.length,
+        totalProducts: productCount,
+        totalOrders: orderCount,
+        products: insertedProducts.map(p => ({
+          id: p._id,
+          frontendId: p.frontendId,
+          name: p.name,
+          size: p.size,
+          price: p.price
+        }))
+      }
+    });
+    
+  } catch (error) {
+    console.error('Seed database error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error seeding database',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

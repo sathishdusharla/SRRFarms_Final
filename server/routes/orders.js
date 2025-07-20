@@ -283,7 +283,7 @@ router.post('/guest', async (req, res) => {
         phone: customerInfo.phone,
         address: finalAddress
       },
-      items: orderItems,
+      items: processedItems,
       subtotal: subtotal || 0,
       shipping: shippingCost || 50,
       tax: tax || 0,
