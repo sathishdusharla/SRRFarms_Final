@@ -100,10 +100,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Backend API base URL for deployed version
   const baseURL = 'https://srrfarms-backend.onrender.com/api';
 
-  // Load cart from backend on login
+  // Load cart from backend on login using user email
   useEffect(() => {
-    if (user && jwt) {
-      fetch(`${baseURL}/cart`, {
+    if (user && jwt && user.email) {
+      fetch(`${baseURL}/cart?email=${encodeURIComponent(user.email)}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
         .then(res => res.json())
@@ -120,10 +120,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [user, jwt]);
 
-  // Save cart to backend on every change
+  // Save cart to backend on every change, store by user email
   useEffect(() => {
-    if (user && jwt) {
-      fetch(`${baseURL}/cart`, {
+    if (user && jwt && user.email) {
+      fetch(`${baseURL}/cart?email=${encodeURIComponent(user.email)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
