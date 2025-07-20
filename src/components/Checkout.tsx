@@ -84,6 +84,13 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
         orderType: user ? 'registered' : 'guest'
       };
 
+      // Debug logging
+      console.log('🔍 Creating Order:');
+      console.log('User:', user);
+      console.log('Order Data:', orderData);
+      console.log('API Base URL:', import.meta.env.VITE_API_URL);
+      console.log('Current hostname:', window.location.hostname);
+
       // Use guest order API for non-authenticated users, regular COD for authenticated users
       const data = user 
         ? await api.createCODOrder(orderData)
@@ -108,9 +115,9 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       if (error instanceof Error && error.message.includes('Backend server is not available')) {
         alert('Backend server is not available. Please deploy the backend to process payments. For now, this is a frontend demonstration.');
       } else if (error instanceof Error && error.message.includes('fetch')) {
-        alert('Unable to connect to server. Please ensure the backend server is running on port 3001.');
+        alert('Unable to connect to server. Please check the backend URL: https://srrfarms-backend.onrender.com/api');
       } else {
-        alert('Failed to create order. Please try again.');
+        alert(`Failed to create order. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } finally {
       setLoading(false);

@@ -1,7 +1,12 @@
 // API utility functions for consistent API calls across the application
 
 const getApiBaseUrl = (): string => {
-  // Use environment variable or fallback to local backend server
+  // For production deployment, check if we're in production environment
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    // Production environment - use Render backend
+    return 'https://srrfarms-backend.onrender.com/api';
+  }
+  // Development environment - use environment variable or localhost
   return import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 };
 
