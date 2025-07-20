@@ -19,7 +19,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const [popupMessage, setPopupMessage] = React.useState('');
   if (!user) {
     React.useEffect(() => {
-      setPopupMessage('Please sign in to place an order');
+      setPopupMessage('Please sign in to place an order.');
       const timer = setTimeout(() => setPopupMessage(''), 3000);
       return () => clearTimeout(timer);
     }, []);
@@ -82,6 +82,11 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   };
 
   const handleCODOrder = async () => {
+    if (!user) {
+      setPopupMessage('Please sign in to place an order.');
+      setTimeout(() => setPopupMessage(''), 3000);
+      return;
+    }
     setLoading(true);
     try {
       const orderData = {
@@ -120,7 +125,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       console.log('API Base URL:', import.meta.env.VITE_API_URL);
       console.log('Current hostname:', window.location.hostname);
 
-      // Use registered order API for logged-in users
+      // Use registered order API for logged-in users only
       const data = await api.createCODOrder(orderData);
 
       if (data.success) {
@@ -128,24 +133,22 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
         setOrderSuccessInfo({
           order: data.order,
           paymentMethod: 'Cash on Delivery',
-          message: user 
-            ? 'Order created successfully!' 
-            : 'Guest order created successfully! You will receive confirmation via email.'
+          message: 'Order created successfully!'
         });
       } else {
-        alert('Failed to create order: ' + data.message);
+        setPopupMessage('Failed to create order: ' + data.message);
+        setTimeout(() => setPopupMessage(''), 3000);
       }
     } catch (error) {
       console.error('COD order error:', error);
-      
-      // Check if this is a backend connectivity issue
       if (error instanceof Error && error.message.includes('Backend server is not available')) {
-        alert('Backend server is not available. Please deploy the backend to process payments. For now, this is a frontend demonstration.');
+        setPopupMessage('Backend server is not available. Please deploy the backend to process payments.');
       } else if (error instanceof Error && error.message.includes('fetch')) {
-        alert('Unable to connect to server. Please check the backend URL: https://srrfarms-backend.onrender.com/api');
+        setPopupMessage('Unable to connect to server. Please check the backend URL.');
       } else {
-        alert(`Failed to create order. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setPopupMessage(`Failed to create order. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+      setTimeout(() => setPopupMessage(''), 3000);
     } finally {
       setLoading(false);
     }
