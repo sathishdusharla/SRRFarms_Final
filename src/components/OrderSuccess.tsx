@@ -49,21 +49,27 @@ export default function OrderSuccess({ orderInfo, onContinueShopping }: OrderSuc
           <div className="bg-gray-50 rounded-xl p-6 mb-8">
             <h3 className="text-lg font-semibold mb-4">Items Ordered</h3>
             <div className="space-y-3">
-              {orderInfo.items.map((item: any) => (
-                <div key={item.product.id} className="flex items-center justify-between">
+              {orderInfo.items.map((item: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <img
-                      src={item.product.image}
-                      alt={item.product.name}
-                      className="w-12 h-12 object-cover rounded-lg"
-                    />
+                    {item.product && item.product.image ? (
+                      <img
+                        src={item.product.image}
+                        alt={item.product.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-xs text-gray-500">
+                        No Image
+                      </div>
+                    )}
                     <div className="text-left">
-                      <p className="font-medium">{item.product.name}</p>
-                      <p className="text-gray-600 text-sm">{item.product.size}</p>
+                      <p className="font-medium">{item.product?.name || 'Unknown'}</p>
+                      <p className="text-gray-600 text-sm">{item.product?.size || ''}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">₹{item.product.price * item.quantity}</p>
+                    <p className="font-semibold">₹{item.product?.price ? item.product.price * item.quantity : 0}</p>
                     <p className="text-gray-600 text-sm">Qty: {item.quantity}</p>
                   </div>
                 </div>

@@ -439,10 +439,14 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
                         <ul className="mb-2">
                           {order.items.map((item: any, idx: number) => (
                             <li key={idx} className="flex items-center space-x-2 mb-1">
-                              <img src={item.product?.image} alt={item.product?.name} className="w-8 h-8 object-cover rounded" />
-                              <span className="font-medium">{item.product?.name}</span>
+                              {item.product && item.product.image ? (
+                                <img src={item.product.image} alt={item.product.name} className="w-8 h-8 object-cover rounded" />
+                              ) : (
+                                <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">No Image</div>
+                              )}
+                              <span className="font-medium">{item.product?.name || 'Unknown'}</span>
                               <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
-                              <span className="text-xs text-gray-500">₹{item.product?.price * item.quantity}</span>
+                              <span className="text-xs text-gray-500">₹{item.product?.price ? item.product.price * item.quantity : 0}</span>
                             </li>
                           ))}
                         </ul>
