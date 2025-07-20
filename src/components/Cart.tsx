@@ -13,18 +13,24 @@ export default function Cart({ onCheckout }: CartProps) {
 
   if (!state.isOpen) return null;
 
+  const [popupMessage, setPopupMessage] = React.useState('');
   const handleCheckout = () => {
     if (user) {
       closeCart();
       onCheckout();
     } else {
-      // Show login prompt
-      alert('Please sign in to place an order');
+      setPopupMessage('Please sign in to add items to cart');
+      setTimeout(() => setPopupMessage(''), 3000);
     }
-  };
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
+      {popupMessage && (
+        <div className="fixed top-20 right-4 z-[100]">
+          <span className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">{popupMessage}</span>
+        </div>
+      )}
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black bg-opacity-50" onClick={closeCart} />
       

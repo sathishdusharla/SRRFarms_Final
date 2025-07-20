@@ -16,9 +16,20 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const { state, getTotalPrice, clearCart } = useCart();
   const { user, userProfile } = useAuth();
   // Require login for order placement
+  const [popupMessage, setPopupMessage] = React.useState('');
   if (!user) {
+    React.useEffect(() => {
+      setPopupMessage('Please sign in to place an order');
+      const timer = setTimeout(() => setPopupMessage(''), 3000);
+      return () => clearTimeout(timer);
+    }, []);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        {popupMessage && (
+          <div className="fixed top-20 right-4 z-[100]">
+            <span className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">{popupMessage}</span>
+          </div>
+        )}
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold mb-4 text-gray-800">Login Required</h2>
           <p className="text-gray-600 mb-6">You must be logged in to place an order. Please sign in to continue.</p>
