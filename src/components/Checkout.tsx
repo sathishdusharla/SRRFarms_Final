@@ -141,23 +141,21 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const isFormValid = customerInfo.name && customerInfo.email && customerInfo.phone && customerInfo.address;
 
   if (orderSuccessInfo) {
-    // Normalize guest order response for OrderSuccess
-    const order = orderSuccessInfo.order;
-    const normalizedOrder = {
-      id: order._id || order.id || '',
-      orderNumber: order.orderNumber || '',
-      total: order.total,
-      status: order.status || 'pending',
-      paymentMethod: order.paymentMethod,
-      customer: order.customer,
-      items: order.items,
-      createdAt: order.createdAt,
-      isGuestOrder: order.isGuestOrder,
+    // Ensure fallback values for missing fields
+    const orderInfo = {
+      id: orderSuccessInfo.order?.id || orderSuccessInfo.order?._id || 'N/A',
+      total: orderSuccessInfo.order?.total || 0,
+      status: orderSuccessInfo.order?.status || 'pending',
+      customerInfo: orderSuccessInfo.order?.customer || {},
+      paymentMethod: orderSuccessInfo.paymentMethod || orderSuccessInfo.order?.paymentMethod || 'COD',
       message: orderSuccessInfo.message || '',
+      createdAt: orderSuccessInfo.order?.createdAt || '',
+      items: orderSuccessInfo.order?.items || [],
     };
     return (
-      <OrderSuccess orderInfo={normalizedOrder} onContinueShopping={() => window.location.href = '/'} />
+      <OrderSuccess orderInfo={orderInfo} onContinueShopping={() => window.location.href = '/'} />
     );
+  }
   }
   return (
     <div className="min-h-screen bg-gray-50 py-8">
