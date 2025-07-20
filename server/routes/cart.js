@@ -1,3 +1,59 @@
+// Get user's cart (by email if provided)
+router.get('/', async (req, res) => {
+  try {
+    const email = req.query.email;
+    let userId = req.user._id;
+    if (email) {
+      const user = await require('../models/User').findOne({ email });
+      if (user) userId = user._id;
+    }
+    let cart = await Cart.findOne({ user: userId }).populate('items.product');
+    if (!cart) {
+      cart = new Cart({ user: userId });
+      await cart.save();
+    }
+    res.json({
+      success: true,
+      items: cart.items
+    });
+  } catch (error) {
+    console.error('Get cart error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving cart'
+    });
+  }
+});
+
+// Save cart to backend (by email if provided)
+router.put('/', async (req, res) => {
+  try {
+    const { items } = req.body;
+    const email = req.query.email;
+    let userId = req.user._id;
+    if (email) {
+      const user = await require('../models/User').findOne({ email });
+      if (user) userId = user._id;
+    }
+    let cart = await Cart.findOne({ user: userId });
+    if (!cart) {
+      cart = new Cart({ user: userId });
+    }
+    cart.items = items;
+    await cart.save();
+    await cart.populate('items.product');
+    res.json({
+      success: true,
+      items: cart.items
+    });
+  } catch (error) {
+    console.error('Save cart error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error saving cart'
+    });
+  }
+});
 const express = require('express');
 const router = express.Router();
 const Cart = require('../models/Cart');
