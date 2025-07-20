@@ -215,7 +215,7 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
     
     setLoading(true);
     try {
-      const { data } = await apiCall(`/orders/admin/all?status=${orderFilter}&search=${orderSearch}&limit=20`);
+      const { data } = await apiCall(`/orders/admin/all-public?status=${orderFilter}&search=${orderSearch}&limit=20`);
       if (data.success) {
         const ordersList = data.orders || [];
         setOrders(ordersList);

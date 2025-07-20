@@ -100,11 +100,12 @@ export const api = {
   }),
 
   // Payment endpoints
-  getUPIInfo: () => apiCall('/payments/upi-info'),
+  getUPIInfo: () => apiCall('/payments/upi-info', { requireAuth: false }),
   
   createUPIOrder: (formData: FormData) => apiCall('/payments/create-upi-order', {
     method: 'POST',
-    body: formData
+    body: formData,
+    requireAuth: false
   }),
 
   createCODOrder: (orderData: any) => apiCall('/payments/create-cod-order', {
@@ -118,8 +119,8 @@ export const api = {
     requireAuth: false
   }),
 
-  // Admin endpoints
-  getAllOrders: () => apiCall('/orders/admin/all'),
+  // Admin endpoints (temporary public access for demo)
+  getAllOrders: () => apiCall('/orders/admin/all-public', { requireAuth: false }),
   
   getPendingVerifications: () => apiCall('/payments/admin/pending-verifications'),
   

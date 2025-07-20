@@ -36,11 +36,7 @@ const UPIPayment: React.FC<UPIPaymentProps> = ({
   const fetchUPIInfo = async () => {
     try {
       const baseURL = import.meta.env.VITE_API_URL || '/api';
-      const response = await fetch(`${baseURL}/payments/upi-info`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await fetch(`${baseURL}/payments/upi-info`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

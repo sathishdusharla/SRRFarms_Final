@@ -91,10 +91,8 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       console.log('API Base URL:', import.meta.env.VITE_API_URL);
       console.log('Current hostname:', window.location.hostname);
 
-      // Use guest order API for non-authenticated users, regular COD for authenticated users
-      const data = user 
-        ? await api.createCODOrder(orderData)
-        : await api.createGuestOrder(orderData);
+      // Use guest order API for all COD orders for now (authentication can be added later)
+      const data = await api.createGuestOrder(orderData);
 
       if (data.success) {
         clearCart();

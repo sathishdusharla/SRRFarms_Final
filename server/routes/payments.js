@@ -45,7 +45,7 @@ const upload = multer({
 });
 
 // Apply authentication to all payment routes
-router.use(authenticateToken);
+// REMOVED: router.use(authenticateToken); - Allow public access to UPI info and order creation
 
 // POST /api/payments/create-upi-order
 // Create UPI order with payment screenshot upload

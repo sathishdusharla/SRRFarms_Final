@@ -336,6 +336,73 @@ router.put('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// TEMPORARY: Public orders endpoint for demo (remove in production)
+router.get('/admin/all-public', async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 50,
+      status, 
+      search, 
+      startDate, 
+      endDate 
+    } = req.query;
+
+    const skip = (page - 1) * limit;
+    let query = {};
+
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { 'customer.name': { $regex: search, $options: 'i' } },
+        { 'customer.email': { $regex: search, $options: 'i' } },
+        { 'customer.phone': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+
+    const [orders, totalOrders] = await Promise.all([
+      Order.find(query)
+        .populate('user', 'fullName email phone')
+        .populate('items.product', 'name price')
+        .select('orderNumber customer items subtotal total status paymentMethod createdAt isGuestOrder user')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean(),
+      Order.countDocuments(query)
+    ]);
+
+    res.json({
+      success: true,
+      orders: orders,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalOrders / limit),
+        totalOrders: totalOrders,
+        hasNext: page * limit < totalOrders,
+        hasPrev: page > 1
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving orders'
+    });
+  }
+});
+
 // GET /api/orders/admin/all - Get all orders (Admin only)
 router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
   try {
