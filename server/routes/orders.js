@@ -272,19 +272,11 @@ router.post('/guest', async (req, res) => {
       fullAddress: `${shippingAddress.street}, ${shippingAddress.city || 'City'}, ${shippingAddress.state || 'State'} - ${shippingAddress.pincode || '000000'}`
     };
 
-    // Try to associate guest order with a user if email matches
-    let userId = null;
-    if (customerInfo.email) {
-      const existingUser = await User.findOne({ email: customerInfo.email });
-      if (existingUser) {
-        userId = existingUser._id;
-      }
-    }
     // Create order
     const order = new Order({
       orderNumber: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
-      user: userId, // Link to user if found
-      isGuestOrder: !userId,
+      user: null, // No user for guest orders
+      isGuestOrder: true,
       customer: {
         name: customerInfo.name,
         email: customerInfo.email,
