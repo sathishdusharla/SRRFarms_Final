@@ -32,20 +32,13 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
   });
 
   if (!isOpen || !user) {
-    return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">User Not Found</h2>
-          <p className="text-gray-600 mb-6">Unable to load user profile. Please log in again or refresh the page.</p>
-          <button
-            className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700"
-            onClick={() => { window.location.href = '/'; }}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
+    // If modal is open but no user, just close the modal immediately
+    React.useEffect(() => {
+      if (isOpen && !user) {
+        onClose();
+      }
+    }, [isOpen, user, onClose]);
+    return null;
   }
 
   const handleLogout = async () => {
