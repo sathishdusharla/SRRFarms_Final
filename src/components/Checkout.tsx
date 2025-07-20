@@ -103,7 +103,15 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       }
     } catch (error) {
       console.error('COD order error:', error);
-      alert('Failed to create order. Please try again.');
+      
+      // Check if this is a backend connectivity issue
+      if (error instanceof Error && error.message.includes('Backend server is not available')) {
+        alert('Backend server is not available. Please deploy the backend to process payments. For now, this is a frontend demonstration.');
+      } else if (error instanceof Error && error.message.includes('fetch')) {
+        alert('Unable to connect to server. Please ensure the backend server is running on port 3001.');
+      } else {
+        alert('Failed to create order. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

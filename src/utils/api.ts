@@ -1,7 +1,8 @@
 // API utility functions for consistent API calls across the application
 
 const getApiBaseUrl = (): string => {
-  return import.meta.env.VITE_API_URL || '/api';
+  // Use environment variable or fallback to local backend server
+  return import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 };
 
 interface ApiOptions {
@@ -61,6 +62,15 @@ export const apiCall = async (endpoint: string, options: ApiOptions = {}): Promi
     return await response.text();
   } catch (error) {
     console.error('API call failed:', error);
+    
+    // Check if this is a network error (backend not available)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      // Backend is not available, show user-friendly message
+      if (endpoint.includes('/orders') || endpoint.includes('/payments')) {
+        throw new Error('Backend server is not available. Please deploy the backend to process payments. For now, this is a frontend demonstration.');
+      }
+    }
+    
     throw error;
   }
 };
