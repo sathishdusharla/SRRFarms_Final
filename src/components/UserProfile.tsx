@@ -31,7 +31,22 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
     gender: user?.gender || ''
   });
 
-  if (!isOpen || !user) return null;
+  if (!isOpen || !user) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">User Not Found</h2>
+          <p className="text-gray-600 mb-6">Unable to load user profile. Please log in again or refresh the page.</p>
+          <button
+            className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = async () => {
     signOut();
@@ -124,8 +139,8 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">{user.fullName}</h3>
-                <p className="text-sm text-gray-600">{user.email}</p>
+                <h3 className="font-semibold text-gray-800">{user.fullName || 'No Name'}</h3>
+                <p className="text-sm text-gray-600">{user.email || 'No Email'}</p>
                 {user.isAdmin && (
                   <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full mt-1">
                     Admin
@@ -212,27 +227,27 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <p className="text-gray-900">{user.fullName}</p>
+                      <p className="text-gray-900">{user.fullName || 'No Name'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <p className="text-gray-900">{user.email}</p>
+                      <p className="text-gray-900">{user.email || 'No Email'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                      <p className="text-gray-900">{user.phone}</p>
+                      <p className="text-gray-900">{user.phone || 'No Phone'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
-                      <p className="text-gray-900 capitalize">{user.gender}</p>
+                      <p className="text-gray-900 capitalize">{user.gender || 'Not specified'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                      <p className="text-gray-900">{new Date(user.dateOfBirth).toLocaleDateString()}</p>
+                      <p className="text-gray-900">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
-                      <p className="text-gray-900">{new Date(user.createdAt).toLocaleDateString()}</p>
+                      <p className="text-gray-900">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
                     </div>
                   </div>
                 ) : (
@@ -340,9 +355,9 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
                 {!isEditing ? (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="space-y-2">
-                      <p className="font-medium text-gray-900">{user.address.street}</p>
-                      <p className="text-gray-700">{user.address.city}, {user.address.state}</p>
-                      <p className="text-gray-700">Pincode: {user.address.pincode}</p>
+                      <p className="font-medium text-gray-900">{user.address?.street || 'No Address'}</p>
+                      <p className="text-gray-700">{user.address?.city || ''}, {user.address?.state || ''}</p>
+                      <p className="text-gray-700">Pincode: {user.address?.pincode || ''}</p>
                     </div>
                   </div>
                 ) : (
