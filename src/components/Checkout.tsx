@@ -15,6 +15,23 @@ interface CheckoutProps {
 export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const { state, getTotalPrice, clearCart } = useCart();
   const { user, userProfile } = useAuth();
+  // Require login for order placement
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Login Required</h2>
+          <p className="text-gray-600 mb-6">You must be logged in to place an order. Please sign in to continue.</p>
+          <button
+            className="bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-700"
+            onClick={onBack}
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod'>('upi');
   const [showUPIPayment, setShowUPIPayment] = useState(false);
@@ -58,32 +75,31 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
     try {
       const orderData = {
         customerInfo: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          phone: customerInfo.phone,
-          isGuest: !user
+          name: userProfile?.fullName || customerInfo.name,
+          email: user?.email || customerInfo.email,
+          phone: userProfile?.phone || customerInfo.phone,
         },
         shippingAddress: {
-          street: customerInfo.address,
-          city: 'Not specified',
-          state: 'Not specified',
-          pincode: '000000',
-          country: 'India'
+          street: userProfile?.address?.street || customerInfo.address,
+          city: userProfile?.address?.city || '',
+          state: userProfile?.address?.state || '',
+          pincode: userProfile?.address?.pincode || '',
+          country: 'India',
         },
         items: state.items.map(item => ({
           productId: item.product.id,
           name: item.product.name,
           price: item.product.price,
           quantity: item.quantity,
-          size: item.product.size
+          size: item.product.size,
         })),
         paymentMethod: 'cod',
-        subtotal: subtotal,
-        tax: tax,
-        shippingCost: shippingCost,
-        total: total,
+        subtotal,
+        tax,
+        shippingCost,
+        total,
         notes: customerInfo.notes,
-        orderType: user ? 'registered' : 'guest'
+        orderType: 'registered',
       };
 
       // Debug logging
@@ -93,8 +109,8 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       console.log('API Base URL:', import.meta.env.VITE_API_URL);
       console.log('Current hostname:', window.location.hostname);
 
-      // Use guest order API for all COD orders for now (authentication can be added later)
-      const data = await api.createGuestOrder(orderData);
+      // Use registered order API for logged-in users
+      const data = await api.createCODOrder(orderData);
 
       if (data.success) {
         clearCart();
@@ -146,14 +162,14 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       id: orderSuccessInfo.order?.id || orderSuccessInfo.order?._id || 'N/A',
       total: orderSuccessInfo.order?.total || 0,
       status: orderSuccessInfo.order?.status || 'pending',
-      customerInfo: orderSuccessInfo.order?.customer || {},
+      customerInfo: orderSuccessInfo.order?.customerInfo || orderSuccessInfo.order?.customer || {},
       paymentMethod: orderSuccessInfo.paymentMethod || orderSuccessInfo.order?.paymentMethod || 'COD',
       message: orderSuccessInfo.message || '',
       createdAt: orderSuccessInfo.order?.createdAt || '',
       items: orderSuccessInfo.order?.items || [],
     };
     return (
-      <OrderSuccess orderInfo={orderInfo} onContinueShopping={() => window.location.href = '/'} />
+      <OrderSuccess orderInfo={orderInfo} onContinueShopping={onBack} />
     );
   }
 
