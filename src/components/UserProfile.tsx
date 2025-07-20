@@ -13,6 +13,8 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   
   const { user, signOut, updateProfile } = useAuth();
   const [editData, setEditData] = useState({
@@ -94,6 +96,22 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
   if (user?.isAdmin) {
     tabs.push({ id: 'admin', label: 'Admin Panel', icon: Shield });
   }
+
+  // Fetch user orders when orders tab is active
+  React.useEffect(() => {
+    if (activeTab === 'orders') {
+      setOrdersLoading(true);
+      import('../utils/api').then(({ api }) => {
+        api.getUserOrders().then((res: any) => {
+          setOrders(res.orders || []);
+          setOrdersLoading(false);
+        }).catch(() => {
+          setOrders([]);
+          setOrdersLoading(false);
+        });
+      });
+    }
+  }, [activeTab]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -394,10 +412,45 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
 
             {/* Orders Tab */}
             {activeTab === 'orders' && (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Orders Yet</h3>
-                <p className="text-gray-500">Start shopping to see your orders here!</p>
+              <div className="py-8">
+                <h3 className="text-xl font-bold mb-6 text-gray-800">Your Orders</h3>
+                {ordersLoading ? (
+                  <div className="text-center py-8 text-gray-500">Loading orders...</div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">No Orders Yet</h3>
+                    <p className="text-gray-500">Start shopping to see your orders here!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {orders.map((order: any) => (
+                      <div key={order._id || order.id} className="bg-white rounded-xl shadow p-6">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <span className="font-semibold text-gray-800">Order #{order.orderNumber || order._id || order.id}</span>
+                            <span className="ml-2 text-xs text-gray-500">{new Date(order.createdAt).toLocaleString()}</span>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${order.status === 'delivered' ? 'bg-green-100 text-green-700' : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{order.status}</span>
+                        </div>
+                        <div className="mb-2 text-sm text-gray-600">Total: <span className="font-bold text-yellow-700">₹{order.total}</span></div>
+                        <div className="mb-2 text-sm text-gray-600">Payment: <span className="font-bold">{order.paymentMethod}</span></div>
+                        <div className="mb-2 text-sm text-gray-600">Items:</div>
+                        <ul className="mb-2">
+                          {order.items.map((item: any, idx: number) => (
+                            <li key={idx} className="flex items-center space-x-2 mb-1">
+                              <img src={item.product?.image} alt={item.product?.name} className="w-8 h-8 object-cover rounded" />
+                              <span className="font-medium">{item.product?.name}</span>
+                              <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                              <span className="text-xs text-gray-500">₹{item.product?.price * item.quantity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="text-sm text-gray-600">Delivery Address: <span className="font-medium">{order.shippingAddress?.street}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

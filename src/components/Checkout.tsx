@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { CustomerInfo } from '../types';
 import UPIPayment from './UPIPayment';
 import { api } from '../utils/api';
+import OrderSuccess from './OrderSuccess';
 
 interface CheckoutProps {
   onBack: () => void;
@@ -25,6 +26,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
     address: userProfile?.address?.street || '',
     notes: ''
   });
+  const [orderSuccessInfo, setOrderSuccessInfo] = useState<any>(null);
 
   const shippingCost = 50;
   const taxRate = 0.05;
@@ -96,7 +98,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
 
       if (data.success) {
         clearCart();
-        onOrderComplete({
+        setOrderSuccessInfo({
           order: data.order,
           paymentMethod: 'Cash on Delivery',
           message: user 
@@ -125,7 +127,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   const handleUPISuccess = (order: any) => {
     setShowUPIPayment(false);
     clearCart();
-    onOrderComplete({
+    setOrderSuccessInfo({
       order: order,
       paymentMethod: 'UPI',
       message: 'Order created successfully! Waiting for payment verification.'
@@ -137,6 +139,23 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
   };
 
   const isFormValid = customerInfo.name && customerInfo.email && customerInfo.phone && customerInfo.address;
+
+  if (orderSuccessInfo) {
+    // Ensure fallback values for missing fields
+    const orderInfo = {
+      id: orderSuccessInfo.order?.id || orderSuccessInfo.order?._id || 'N/A',
+      total: orderSuccessInfo.order?.total || 0,
+      status: orderSuccessInfo.order?.status || 'pending',
+      customerInfo: orderSuccessInfo.order?.customer || {},
+      paymentMethod: orderSuccessInfo.paymentMethod || orderSuccessInfo.order?.paymentMethod || 'COD',
+      message: orderSuccessInfo.message || '',
+      createdAt: orderSuccessInfo.order?.createdAt || '',
+      items: orderSuccessInfo.order?.items || [],
+    };
+    return (
+      <OrderSuccess orderInfo={orderInfo} onContinueShopping={() => window.location.href = '/'} />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
