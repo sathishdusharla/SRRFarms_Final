@@ -1,3 +1,22 @@
+// GET /api/orders/all - Get all orders (admin only)
+router.get('/all', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const orders = await require('../models/Order').find({})
+      .populate('user', 'name email')
+      .populate('items.product')
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      orders
+    });
+  } catch (error) {
+    console.error('Admin get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving all orders'
+    });
+  }
+});
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
