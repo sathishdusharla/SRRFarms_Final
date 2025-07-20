@@ -89,12 +89,14 @@ interface CartContextType {
   closeCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  cartSyncError: string | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [cartSyncError, setCartSyncError] = React.useState<string | null>(null);
   const { user, jwt } = useAuth();
 
   // Backend API base URL for deployed version
@@ -106,31 +108,64 @@ export function CartProvider({ children }: { children: ReactNode }) {
       fetch(`${baseURL}/cart?email=${encodeURIComponent(user.email)}`, {
         headers: { 'Authorization': `Bearer ${jwt}` }
       })
-        .then(res => res.json())
+        .then(async res => {
+          if (!res.ok) {
+            const errText = await res.text();
+            setCartSyncError('Failed to sync cart: ' + errText);
+            console.error('Failed to fetch cart from backend:', res.status, errText);
+            return null;
+          }
+          setCartSyncError(null);
+          return res.json();
+        })
         .then(data => {
-          if (data.success && Array.isArray(data.items)) {
+          if (data && data.success && Array.isArray(data.items)) {
             dispatch({ type: 'CLEAR_CART' });
             data.items.forEach((item: any) => {
               for (let i = 0; i < item.quantity; i++) {
                 dispatch({ type: 'ADD_TO_CART', payload: item.product });
               }
             });
+          } else if (data && !data.success) {
+            setCartSyncError('Backend cart fetch error: ' + data.message);
+            console.error('Backend cart fetch error:', data.message);
           }
+        })
+        .catch(err => {
+          setCartSyncError('Error fetching cart from backend: ' + err);
+          console.error('Error fetching cart from backend:', err);
         });
     }
   }, [user, jwt]);
 
   // Save cart to backend on every change, store by user email
+  // Debounce cart save for performance
   useEffect(() => {
     if (user && jwt && user.email) {
-      fetch(`${baseURL}/cart?email=${encodeURIComponent(user.email)}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${jwt}`
-        },
-        body: JSON.stringify({ items: state.items })
-      });
+      const timeout = setTimeout(() => {
+        fetch(`${baseURL}/cart?email=${encodeURIComponent(user.email)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`
+          },
+          body: JSON.stringify({ items: state.items })
+        })
+        .then(async res => {
+          if (!res.ok) {
+            const errText = await res.text();
+            setCartSyncError('Failed to save cart: ' + errText);
+            console.error('Failed to save cart to backend:', res.status, errText);
+          } else {
+            setCartSyncError(null);
+          }
+        })
+        .catch(err => {
+          setCartSyncError('Error saving cart to backend: ' + err);
+          console.error('Error saving cart to backend:', err);
+        });
+      }, 300); // 300ms debounce
+      return () => clearTimeout(timeout);
     }
   }, [state.items, user, jwt]);
 
@@ -176,7 +211,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       toggleCart,
       closeCart,
       getTotalItems,
-      getTotalPrice
+      getTotalPrice,
+      cartSyncError
     }}>
       {children}
     </CartContext.Provider>
