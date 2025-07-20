@@ -2,7 +2,11 @@
 
 const getApiBaseUrl = (): string => {
   // For production deployment, check if we're in production environment
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  if (typeof window !== 'undefined' && (
+    window.location.hostname === 'srrfarms.netlify.app' || 
+    window.location.hostname === 'srrfarms-final.netlify.app' ||
+    window.location.hostname !== 'localhost'
+  )) {
     // Production environment - use Render backend
     return 'https://srrfarms-backend.onrender.com/api';
   }

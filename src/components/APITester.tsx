@@ -9,8 +9,11 @@ const APITester = () => {
     setTestResult('Testing...');
     
     try {
-      const baseURL = typeof window !== 'undefined' && window.location.hostname !== 'localhost' 
-        ? 'https://srrfarms-backend.onrender.com/api'
+      const baseURL = typeof window !== 'undefined' && (
+        window.location.hostname === 'srrfarms.netlify.app' || 
+        window.location.hostname === 'srrfarms-final.netlify.app' ||
+        window.location.hostname !== 'localhost'
+      ) ? 'https://srrfarms-backend.onrender.com/api'
         : 'http://localhost:3001/api';
 
       console.log('Testing backend at:', baseURL);

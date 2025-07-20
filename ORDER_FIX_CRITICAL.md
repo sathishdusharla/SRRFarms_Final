@@ -4,7 +4,7 @@
 Orders are failing to create because the frontend can't connect to the backend properly.
 
 ## Root Cause Analysis
-1. **Frontend on Netlify**: https://srrfarms-final.netlify.app  
+1. **Frontend on Netlify**: https://srrfarms.netlify.app  
 2. **Backend on Render**: https://srrfarms-backend.onrender.com
 3. **Issue**: API URL configuration not properly set in production
 
@@ -12,7 +12,7 @@ Orders are failing to create because the frontend can't connect to the backend p
 
 ### Fix 1: Set Netlify Environment Variable
 1. Go to [Netlify Dashboard](https://app.netlify.com/)
-2. Select your `srrfarms-final` site
+2. Select your `srrfarms` site (not srrfarms-final)
 3. Go to **Site Settings** → **Environment Variables**
 4. Add this variable:
    ```
@@ -81,7 +81,7 @@ After implementing fixes:
 3. **Verify CORS**: Ensure backend allows your Netlify domain
 
 ## 📱 Test After Fix
-1. Visit: https://srrfarms-final.netlify.app
+1. Visit: https://srrfarms.netlify.app
 2. Add items to cart
 3. Proceed to checkout
 4. Fill customer details

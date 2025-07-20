@@ -5,7 +5,7 @@
   "type": "module",
   "description": "SRR Farms E-commerce Platform with UPI Payment System",
   "author": "SRR Farms",
-  "homepage": "https://srrfarms-final.netlify.app",
+  "homepage": "https://srrfarms.netlify.app",
   "repository": {
     "type": "git",
     "url": "https://github.com/sathishdusharla/SRRFarms_Final.git"
