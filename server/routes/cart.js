@@ -22,9 +22,28 @@ router.get('/', async (req, res) => {
       cart = new Cart({ user: userId });
       await cart.save();
     }
+    // Map items to frontend format
+    const items = cart.items.map(item => ({
+      product: {
+        id: item.product._id?.toString() || item.product.id,
+        name: item.product.name,
+        size: item.product.size,
+        price: item.product.price,
+        originalPrice: item.product.originalPrice,
+        image: item.product.image,
+        rating: item.product.rating || 0,
+        reviews: item.product.reviews || 0,
+        badge: item.product.badge || '',
+        description: item.product.description || '',
+        benefits: item.product.benefits || [],
+        inStock: item.product.inStock !== undefined ? item.product.inStock : true,
+        category: item.product.category || '',
+      },
+      quantity: item.quantity
+    }));
     res.json({
       success: true,
-      items: cart.items
+      items
     });
   } catch (error) {
     console.error('Get cart error:', error);
