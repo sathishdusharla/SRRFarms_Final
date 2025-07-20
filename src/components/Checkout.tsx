@@ -1,10 +1,8 @@
-  const [orderSuccessInfo, setOrderSuccessInfo] = useState<any>(null);
 import React, { useState } from 'react';
 import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { CustomerInfo } from '../types';
-import OrderSuccess from './OrderSuccess';
 import UPIPayment from './UPIPayment';
 import { api } from '../utils/api';
 
@@ -98,7 +96,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
 
       if (data.success) {
         clearCart();
-        setOrderSuccessInfo({
+        onOrderComplete({
           order: data.order,
           paymentMethod: 'Cash on Delivery',
           message: user 
@@ -140,25 +138,6 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
 
   const isFormValid = customerInfo.name && customerInfo.email && customerInfo.phone && customerInfo.address;
 
-  if (orderSuccessInfo) {
-    // Normalize guest order response for OrderSuccess
-    const order = orderSuccessInfo.order;
-    const normalizedOrder = {
-      id: order._id || order.id || '',
-      orderNumber: order.orderNumber || '',
-      total: order.total,
-      status: order.status || 'pending',
-      paymentMethod: order.paymentMethod,
-      customer: order.customer,
-      items: order.items,
-      createdAt: order.createdAt,
-      isGuestOrder: order.isGuestOrder,
-      message: orderSuccessInfo.message || '',
-    };
-    return (
-      <OrderSuccess orderInfo={normalizedOrder} onContinueShopping={() => window.location.href = '/'} />
-    );
-  }
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
