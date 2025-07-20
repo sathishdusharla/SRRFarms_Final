@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, MapPin, Package, LogOut, Edit2, X, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../utils/api';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -8,6 +9,8 @@ interface UserProfileProps {
 }
 
 export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -94,6 +97,18 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
   if (user?.isAdmin) {
     tabs.push({ id: 'admin', label: 'Admin Panel', icon: Shield });
   }
+
+  React.useEffect(() => {
+    if (activeTab === 'orders') {
+      setOrdersLoading(true);
+      api.getUserOrders()
+        .then((res: any) => {
+          setOrders(res.orders || []);
+        })
+        .catch(() => setOrders([]))
+        .finally(() => setOrdersLoading(false));
+    }
+  }, [activeTab]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -394,10 +409,36 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
 
             {/* Orders Tab */}
             {activeTab === 'orders' && (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Orders Yet</h3>
-                <p className="text-gray-500">Start shopping to see your orders here!</p>
+              <div className="py-8">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6">Your Orders</h3>
+                {ordersLoading ? (
+                  <div className="text-center py-8 text-gray-500">Loading orders...</div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">No Orders Yet</h3>
+                    <p className="text-gray-500">Start shopping to see your orders here!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {orders.map(order => (
+                      <div key={order._id} className="bg-white rounded-xl shadow p-6">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold text-gray-700">Order ID: {order._id}</span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'delivered' ? 'bg-green-100 text-green-700' : order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{order.status}</span>
+                        </div>
+                        <div className="text-gray-600 mb-2">Placed on: {new Date(order.createdAt).toLocaleString()}</div>
+                        <div className="mb-2">Total: <span className="font-bold text-yellow-700">₹{order.total}</span></div>
+                        <div className="mb-2">Payment: <span className="font-semibold">{order.paymentMethod}</span></div>
+                        <div className="mb-2">Items: {order.items.map((item: any) => `${item.name} x${item.quantity}`).join(', ')}</div>
+                        {order.notes && <div className="mb-2 text-gray-500">Notes: {order.notes}</div>}
+                        <div className="text-right">
+                          <span className="text-xs text-gray-400">Last updated: {new Date(order.updatedAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
