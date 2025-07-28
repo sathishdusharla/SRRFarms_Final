@@ -229,28 +229,38 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
             items = order.items;
           }
 
-          // Ensure required fields with defaults
+          // Fallbacks for missing/invalid fields
+          const orderId = (order && (order.orderId || order._id || order.id)) && order.orderId !== '#N/A' ? (order.orderId || order._id || order.id) : (order._id || order.id || '');
+          const total = (order && typeof order.total === 'number' && order.total > 0) ? order.total : (order && typeof order.total === 'string' && !isNaN(Number(order.total)) && Number(order.total) > 0 ? Number(order.total) : 0);
+          // Merge customer info
+          const customer = order && order.customer ? order.customer : {
+            name: order && order.name ? order.name : (order && order.user && order.user.fullName ? order.user.fullName : ''),
+            email: order && order.email ? order.email : (order && order.user && order.user.email ? order.user.email : ''),
+            phone: order && order.phone ? order.phone : (order && order.user && order.user.phone ? order.user.phone : ''),
+            address: {
+              fullAddress: order && order.address && order.address !== '#N/A' ? order.address : ''
+            }
+          };
+          // Fallback for address
+          if (!customer.address.fullAddress || customer.address.fullAddress === '#N/A') {
+            customer.address.fullAddress = [customer.name, customer.email, customer.phone].filter(Boolean).join(', ');
+          }
+          const status = order && order.status ? order.status : 'pending';
+          const createdAt = order && (order.createdAt || order.timestamp) ? (order.createdAt || order.timestamp) : '';
           return {
-            _id: (order && (order._id || order.id)) || '',
-            orderNumber: (order && order.orderNumber) || '',
-            user: (order && order.user) || null,
-            customer: (order && order.customer) || {
-              name: (order && order.name) || '',
-              email: (order && order.email) || '',
-              phone: (order && order.phone) || '',
-              address: {
-                fullAddress: (order && order.address) || ''
-              }
-            },
+            _id: orderId,
+            orderNumber: order && order.orderNumber ? order.orderNumber : '',
+            user: order && order.user ? order.user : null,
+            customer,
             items,
             subtotal: Number(order && order.subtotal) || 0,
             shipping: Number(order && order.shipping) || 0,
             tax: Number(order && order.tax) || 0,
-            total: Number(order && order.total) || 0,
-            status: (order && order.status) || 'pending',
-            paymentMethod: (order && order.paymentMethod) || '',
-            paymentStatus: (order && order.paymentStatus) || '',
-            createdAt: (order && (order.createdAt || order.timestamp)) || '',
+            total,
+            status,
+            paymentMethod: order && order.paymentMethod ? order.paymentMethod : '',
+            paymentStatus: order && order.paymentStatus ? order.paymentStatus : '',
+            createdAt,
             isGuestOrder: !!(order && order.isGuestOrder),
           };
         })
