@@ -125,8 +125,22 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       console.log('API Base URL:', import.meta.env.VITE_API_URL);
       console.log('Current hostname:', window.location.hostname);
 
-      // Use registered order API for logged-in users only
-      const data = await api.createCODOrder(orderData);
+      // Store order in Google Sheet using Apps Script
+      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbzU7QedeixCxQ59buCrub074KVeiJK-Is81FeQ4bwsARDZSMZ08fPf_vvXBtPZASa-1/exec";
+      const orderId = `SRR-${Date.now()}`;
+      const response = await fetch(GOOGLE_SHEET_ORDER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          orderId,
+          email: user.email,
+          items: JSON.stringify(state.items),
+          total: getTotalPrice().toString(),
+          address: userProfile?.address?.street || customerInfo.address,
+          status: "Placed"
+        }).toString()
+      });
+      const data = await response.json();
 
       if (data.success) {
         clearCart();

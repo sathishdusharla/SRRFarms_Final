@@ -208,25 +208,12 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
 
   // Fetch orders with caching
   const fetchOrders = async (useCache = true) => {
-    if (useCache && dataCache.orders && isCacheValid(dataCache.timestamp) && !orderSearch && orderFilter === 'all') {
-      setOrders(dataCache.orders);
-      return;
-    }
-    
     setLoading(true);
     try {
-      const { data } = await apiCall(`/orders/admin/all-public?status=${orderFilter}&search=${orderSearch}&limit=20`);
-      if (data.success) {
-        const ordersList = data.orders || [];
-        setOrders(ordersList);
-        if (!orderSearch && orderFilter === 'all') {
-          setDataCache(prev => ({ 
-            ...prev, 
-            orders: ordersList, 
-            timestamp: Date.now() 
-          }));
-        }
-      }
+      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbzU7QedeixCxQ59buCrub074KVeiJK-Is81FeQ4bwsARDZSMZ08fPf_vvXBtPZASa-1/exec";
+      const response = await fetch(`${GOOGLE_SHEET_ORDER_URL}?admin=true`);
+      const data = await response.json();
+      setOrders(data.orders || []);
     } catch (error) {
       setError('Failed to fetch orders');
     } finally {

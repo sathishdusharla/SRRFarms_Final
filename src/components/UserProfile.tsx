@@ -109,15 +109,17 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
   React.useEffect(() => {
     if (activeTab === 'orders') {
       setOrdersLoading(true);
-      import('../utils/api').then(({ api }) => {
-        api.getUserOrders().then((res: any) => {
-          setOrders(res.orders || []);
+      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbzU7QedeixCxQ59buCrub074KVeiJK-Is81FeQ4bwsARDZSMZ08fPf_vvXBtPZASa-1/exec";
+      fetch(`${GOOGLE_SHEET_ORDER_URL}?email=${encodeURIComponent(user.email)}`)
+        .then(res => res.json())
+        .then(data => {
+          setOrders(data.orders || []);
           setOrdersLoading(false);
-        }).catch(() => {
+        })
+        .catch(() => {
           setOrders([]);
           setOrdersLoading(false);
         });
-      });
     }
   }, [activeTab]);
 
