@@ -210,10 +210,51 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   const fetchOrders = async (useCache = true) => {
     setLoading(true);
     try {
-      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbzU7QedeixCxQ59buCrub074KVeiJK-Is81FeQ4bwsARDZSMZ08fPf_vvXBtPZASa-1/exec";
+      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbyCo4YqG4RwWBuIYX0bJ_AbzY2kTvfreQznAwBxlN7-TdMw8-JsSXkHM6Vry-z95PJL/exec";
       const response = await fetch(`${GOOGLE_SHEET_ORDER_URL}?admin=true`);
       const data = await response.json();
-      setOrders(data.orders || []);
+      setOrders((data.orders || [])
+        .filter((order: any) => order && (order._id || order.id)) // skip null/invalid orders
+        .map((order: any) => {
+          // Robustly parse items
+          let items = [];
+          if (order && typeof order.items === 'string') {
+            try {
+              items = JSON.parse(order.items);
+              if (!Array.isArray(items)) items = [];
+            } catch (e) {
+              items = [];
+            }
+          } else if (order && Array.isArray(order.items)) {
+            items = order.items;
+          }
+
+          // Ensure required fields with defaults
+          return {
+            _id: (order && (order._id || order.id)) || '',
+            orderNumber: (order && order.orderNumber) || '',
+            user: (order && order.user) || null,
+            customer: (order && order.customer) || {
+              name: (order && order.name) || '',
+              email: (order && order.email) || '',
+              phone: (order && order.phone) || '',
+              address: {
+                fullAddress: (order && order.address) || ''
+              }
+            },
+            items,
+            subtotal: Number(order && order.subtotal) || 0,
+            shipping: Number(order && order.shipping) || 0,
+            tax: Number(order && order.tax) || 0,
+            total: Number(order && order.total) || 0,
+            status: (order && order.status) || 'pending',
+            paymentMethod: (order && order.paymentMethod) || '',
+            paymentStatus: (order && order.paymentStatus) || '',
+            createdAt: (order && (order.createdAt || order.timestamp)) || '',
+            isGuestOrder: !!(order && order.isGuestOrder),
+          };
+        })
+      );
     } catch (error) {
       setError('Failed to fetch orders');
     } finally {

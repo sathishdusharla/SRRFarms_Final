@@ -126,8 +126,9 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
       console.log('Current hostname:', window.location.hostname);
 
       // Store order in Google Sheet using Apps Script
-      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbzU7QedeixCxQ59buCrub074KVeiJK-Is81FeQ4bwsARDZSMZ08fPf_vvXBtPZASa-1/exec";
+      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbyCo4YqG4RwWBuIYX0bJ_AbzY2kTvfreQznAwBxlN7-TdMw8-JsSXkHM6Vry-z95PJL/exec";
       const orderId = `SRR-${Date.now()}`;
+      const phone = userProfile?.phone || customerInfo.phone;
       const response = await fetch(GOOGLE_SHEET_ORDER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -137,6 +138,7 @@ export default function Checkout({ onBack, onOrderComplete }: CheckoutProps) {
           items: JSON.stringify(state.items),
           total: getTotalPrice().toString(),
           address: userProfile?.address?.street || customerInfo.address,
+          phone,
           status: "Placed"
         }).toString()
       });
