@@ -11,7 +11,7 @@ import Checkout from './components/Checkout';
 import OrderSuccess from './components/OrderSuccess';
 import AdminDashboard from './components/AdminDashboard';
 import DemoModeNotice from './components/DemoModeNotice';
-import APITester from './components/APITester';
+// ...existing code...
 import { Product } from './types';
 
 function App() {
@@ -210,8 +210,7 @@ function AppContent() {
         <DemoModeNotice onClose={() => setShowDemoNotice(false)} />
       )}
       
-      {/* API Debug Tool - only show in development */}
-      {import.meta.env.MODE === 'development' && <APITester />}
+// ...existing code...
     </div>
   );
 }
