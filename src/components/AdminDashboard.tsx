@@ -210,61 +210,70 @@ export default function AdminDashboard({ isOpen, onClose }: AdminDashboardProps)
   const fetchOrders = async (useCache = true) => {
     setLoading(true);
     try {
-      const GOOGLE_SHEET_ORDER_URL = "https://script.google.com/macros/s/AKfycbyCo4YqG4RwWBuIYX0bJ_AbzY2kTvfreQznAwBxlN7-TdMw8-JsSXkHM6Vry-z95PJL/exec";
-      const response = await fetch(`${GOOGLE_SHEET_ORDER_URL}?admin=true`);
+      setError('');
+      // Always use deployment API URL, never fallback to localhost
+      const token = localStorage.getItem('token');
+      const API_BASE_URL = import.meta.env.VITE_API_URL;
+      if (!API_BASE_URL) {
+        setError('API URL not set for deployment. Please configure VITE_API_URL in your environment.');
+        setLoading(false);
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}/admin/orders?search=${encodeURIComponent(orderSearch)}&status=${encodeURIComponent(orderFilter)}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
       const data = await response.json();
-      setOrders((data.orders || [])
-        .filter((order: any) => order && (order._id || order.id)) // skip null/invalid orders
-        .map((order: any) => {
-          // Robustly parse items
-          let items = [];
-          if (order && typeof order.items === 'string') {
-            try {
-              items = JSON.parse(order.items);
-              if (!Array.isArray(items)) items = [];
-            } catch (e) {
-              items = [];
-            }
-          } else if (order && Array.isArray(order.items)) {
-            items = order.items;
-          }
-
-          // Fallbacks for missing/invalid fields
-          const orderId = (order && (order.orderId || order._id || order.id)) && order.orderId !== '#N/A' ? (order.orderId || order._id || order.id) : (order._id || order.id || '');
-          const total = (order && typeof order.total === 'number' && order.total > 0) ? order.total : (order && typeof order.total === 'string' && !isNaN(Number(order.total)) && Number(order.total) > 0 ? Number(order.total) : 0);
-          // Merge customer info
-          const customer = order && order.customer ? order.customer : {
-            name: order && order.name ? order.name : (order && order.user && order.user.fullName ? order.user.fullName : ''),
-            email: order && order.email ? order.email : (order && order.user && order.user.email ? order.user.email : ''),
-            phone: order && order.phone ? order.phone : (order && order.user && order.user.phone ? order.user.phone : ''),
-            address: {
-              fullAddress: order && order.address && order.address !== '#N/A' ? order.address : ''
-            }
-          };
-          // Fallback for address
-          if (!customer.address.fullAddress || customer.address.fullAddress === '#N/A') {
-            customer.address.fullAddress = [customer.name, customer.email, customer.phone].filter(Boolean).join(', ');
-          }
-          const status = order && order.status ? order.status : 'pending';
-          const createdAt = order && (order.createdAt || order.timestamp) ? (order.createdAt || order.timestamp) : '';
-          return {
-            _id: orderId,
-            orderNumber: order && order.orderNumber ? order.orderNumber : '',
-            user: order && order.user ? order.user : null,
-            customer,
-            items,
-            subtotal: Number(order && order.subtotal) || 0,
-            shipping: Number(order && order.shipping) || 0,
-            tax: Number(order && order.tax) || 0,
-            total,
-            status,
-            paymentMethod: order && order.paymentMethod ? order.paymentMethod : '',
-            paymentStatus: order && order.paymentStatus ? order.paymentStatus : '',
-            createdAt,
-            isGuestOrder: !!(order && order.isGuestOrder),
-          };
-        })
-      );
+      if (data.success && data.orders) {
+        // Fast, robust mapping and filtering
+        setOrders(
+          (data.orders || [])
+            .map((order: any) => {
+              let items = Array.isArray(order.items) ? order.items : [];
+              const orderId = order._id || order.orderNumber || '';
+              const total = typeof order.total === 'number' && order.total > 0 ? order.total : 0;
+              const customer = order.customer || {
+                name: order.user?.fullName || '',
+                email: order.user?.email || '',
+                phone: order.user?.phone || '',
+                address: { fullAddress: '' }
+              };
+              if (!customer.address.fullAddress) {
+                customer.address.fullAddress = [customer.name, customer.email, customer.phone].filter(Boolean).join(', ');
+              }
+              const status = order.status || 'pending';
+              const createdAt = order.createdAt || '';
+              return {
+                _id: orderId,
+                orderNumber: order.orderNumber || '',
+                user: order.user || null,
+                customer,
+                items,
+                subtotal: Number(order.subtotal) || 0,
+                shipping: Number(order.shipping) || 0,
+                tax: Number(order.tax) || 0,
+                total,
+                status,
+                paymentMethod: order.paymentMethod || '',
+                paymentStatus: order.paymentStatus || '',
+                createdAt,
+                isGuestOrder: !!order.isGuestOrder,
+              };
+            })
+            .filter((order: any) => {
+              if (!order._id || typeof order._id !== 'string' || order._id.trim() === '') return false;
+              if (!order.total || isNaN(order.total) || Number(order.total) <= 0) return false;
+              if (!order.items || !Array.isArray(order.items) || order.items.length === 0) return false;
+              if (!order.customer || !order.customer.address || !order.customer.address.fullAddress || order.customer.address.fullAddress.trim() === '') return false;
+              return true;
+            })
+        );
+      } else {
+        setOrders([]);
+      }
     } catch (error) {
       setError('Failed to fetch orders');
     } finally {
